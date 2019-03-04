@@ -1,0 +1,22 @@
+backend: pgf
+figure.figsize : 5.50, 3.3
+savefig.bbox: tight
+savefig.pad_inches: 0.0
+
+font.family : sans-serif
+font.size : 9 
+legend.fontsize : medium
+xtick.labelsize : 8
+ytick.labelsize : 8
+pgf.rcfonts : False
+text.usetex : True
+pgf.texsystem : lualatex
+pgf.preamble : \input{header-matplotlib.tex}
+
+lines.linewidth: 2
+patch.linewidth: 2
+patch.antialiased: True
+figure.dpi: 300
+
+axes.labelsize: medium
+axes.axisbelow: True

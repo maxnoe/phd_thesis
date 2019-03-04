@@ -1,0 +1,27 @@
+\begin{tikzpicture}
+  \newlength\radius
+  \setlength\radius{2.5cm}
+
+  \draw[lightgray, thick, ->] (-1.2\radius, 0) -- (1.2\radius, 0);
+  \draw[lightgray, thick, ->] (0, -1.2\radius) -- (0, 1.2\radius);
+  \draw (0, 0) circle (\radius);
+  \node[anchor=south west] at (90:\radius) {N};
+  \node[anchor=south east] at (180:\radius) {W};
+  \node[anchor=north west] at (270:\radius) {S};
+  \node[anchor=south west] at (0:\radius) {E};
+  \node[anchor=280, rotate=10] at (100:\radius) {N\textsubscript{mag}};
+
+  \draw (100:0.95\radius) -- (100:1.05\radius);
+
+  \draw[darkRed, thick, ->] (90:0.95\radius)
+    arc [x radius=0.95\radius, y radius=0.95\radius, start angle=90, delta angle=-30]
+    node[midway, below=0.1cm, rotate=-15, align=center] {\texttt{astropy}};
+
+  \draw[darkBlue, thick, ->] (270:0.95\radius)
+    arc [x radius=0.95\radius, y radius=0.95\radius, start angle=270, delta angle=-30]
+    node[midway, above=0.1cm, rotate=-15, align=center] {\texttt{ceres}};
+
+  \draw[yellow!70!red, thick, ->] (100:0.95\radius)
+    arc [x radius=0.95\radius, y radius=0.95\radius, start angle=100, delta angle=30]
+    node[midway, below=0.1cm, rotate=25, align=center] {\texttt{CORSIKA}};
+\end{tikzpicture}

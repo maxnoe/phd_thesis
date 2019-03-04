@@ -1,0 +1,57 @@
+n_bins: 50
+
+
+datasets:
+  - label: \texttt{6.5\ \ \& fluka}
+    path: ../data/dl2/simulations/v1.1.2/apa85/protons_mmcs6500.hdf5
+    kind: protons
+    n_showers: 780046520
+    spectral_index: -2.7
+    max_impact: 400
+    viewcone: 5
+    e_min: 100
+    e_max: 200.0e+3
+    color: gray
+
+  - label: \texttt{7.69 \& urqmd}
+    path: ../data/dl2/simulations/v1.1.2/fluka_urqmd/protons_urqmd_corsika76900.hdf5
+    kind: protons
+    n_showers: 861000000
+    spectral_index: -2.7
+    max_impact: 500
+    viewcone: 6
+    e_min: 100
+    e_max: 200.0e+3
+
+  - label: \texttt{7.69 \& fluka}
+    path: ../data/dl2/simulations/v1.1.2/fluka_urqmd/protons_fluka_corsika76900.hdf5
+    kind: protons
+    n_showers: 859600000
+    spectral_index: -2.7
+    max_impact: 500
+    viewcone: 6
+    e_min: 100
+    e_max: 200.0e+3
+
+
+
+include_columns:
+    - size
+    - width
+    - length
+    - concentration_cog
+
+columns:
+    size:
+        transform: np.log10
+        yscale: log
+        legend_loc: lower left
+
+    concentration_cog:
+        limits: [-0.1, 1]
+
+    length:
+        limits: [0, 80]
+
+    width:
+        limits: [0, 30]

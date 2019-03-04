@@ -1,0 +1,100 @@
+\bgroup
+\directlua{require('coord.lua')}
+\newcommand\pAz{\directlua{tex.sprint(p_az)}}
+\newcommand\pZd{\directlua{tex.sprint(p_zd)}}
+\newcommand\pR{\directlua{tex.sprint(p_r)}}
+\newcommand\sAz{\directlua{tex.sprint(s_az)}}
+\newcommand\sZd{\directlua{tex.sprint(s_zd)}}
+\newcommand\sR{\directlua{tex.sprint(s_r)}}
+\newcommand\buffer{0.5}
+\newcommand\camera{
+  \tdplotsetrotatedcoords{\pAz}{\pZd}{0}
+  \tdplotsetrotatedcoordsorigin{(P)}
+  \draw[darkBlue, tdplot_rotated_coords, ->] (0.2, 0, 0) -- (-0.2, 0, 0) node[left] {$y_c$};
+  \draw[darkBlue, tdplot_rotated_coords, ->] (0, 0.2, 0) -- (0, -0.2, 0) node[right] {$x_c$};
+  \tdplotdrawarc[thin, darkBlue, tdplot_rotated_coords]{(0, 0, 0)}{0.15}{0}{360}{}{}
+}
+\tdplotsetmaincoords{80}{20}%
+\begin{tikzpicture}[scale=5, tdplot_main_coords]
+  \draw[white] (0, 0, 0) -- (0, 0, -\buffer);
+  \tdplotsetcoord{P}{\pR}{\pZd}{\pAz}
+  \tdplotsetcoord{S}{\sR}{\sZd}{\sAz}
+  \tikzset{>=latex}
+  \coordinate (origin) at (0, 0, 0);
+
+  \draw[thin, dashed, darkRed] (P) -- (Pxy);
+  \draw[thin, dashed, darkRed] (Pxy) -- (0, 0, 0);
+
+  \tdplotdrawarc[darkRed]{(0, 0, 0)}{0.2}{0}{\pAz}{anchor=south east}{$φ_{\mathclap{p}}$}
+
+  \camera
+
+  \tdplotsetthetaplanecoords{\pAz}
+  \tdplotsetrotatedcoordsorigin{(origin)}
+  \tdplotdrawarc[darkRed, tdplot_rotated_coords]{(0, 0, 0)}{0.3}{0}{\pZd}{anchor=south}{$θ_p$}
+ 
+  \draw[thin, lightgray] (-0.5,0,0) -- (0,0,0);
+  \draw[thick,->] (0,0,0) -- (0.5,0,0) node[anchor=west]{$x$};
+  \draw[thick,->] (0,0,0) -- (0,0.5,0) node[anchor=north west]{$y$};
+  \draw[thick,->] (0,0,0) -- (0,0,0.5) node[anchor=south]{$z$};
+  \draw[thin] (0, 0, 0.05) -- (0, 0.05, 0.05) -- (0, 0.05, 0);
+  \draw[thin] (0.05, 0, 0) -- (0.05, 0.05, 0) -- (0, 0.05, 0);
+
+  \draw[thick, ->, darkRed] (0,0,0) --  (P) node[midway, anchor=north east] {$f$};
+  \draw[thick, ->, orange] (0,0,0) --  (S);
+
+\end{tikzpicture}
+\begin{tikzpicture}[scale=5, tdplot_main_coords]
+  \draw[white] (0, 0, 0) -- (0, 0, -\buffer);
+  \tdplotsetcoord{P}{\pR}{\pZd}{\pAz}
+  \tdplotsetcoord{S}{\sR}{\sZd}{\sAz}
+
+  \tikzset{>=latex}
+  \coordinate (origin) at (0, 0, 0);
+
+  \draw[thin, dashed, darkRed] (P) -- (Pxy);
+
+  \camera
+
+  \tdplotsetthetaplanecoords{\pAz}
+  \tdplotsetrotatedcoordsorigin{(origin)}
+  \tdplotdrawarc[darkRed, tdplot_rotated_coords]{(0, 0, 0)}{0.3}{0}{\pZd}{anchor=south}{$θ_p$}
+ 
+  \tdplotsetrotatedcoords{\pAz}{0}{0}
+  \tdplotsetrotatedcoordsorigin{(origin)}
+  \draw[tdplot_rotated_coords, thick,->] (0,0,0) -- (0.7,0,0) node[anchor=east]{$x$};
+  \draw[tdplot_rotated_coords, thick,->] (0,0,0) -- (0,0.7,0) node[anchor=north west]{$y$};
+  \draw[tdplot_rotated_coords, thick,->] (0,0,0) -- (0,0,0.5) node[anchor=south]{$z$};
+
+  \draw[thick, ->, darkRed] (0,0,0) --  (P) node[midway, anchor=north east] {$f$};
+  \draw[thick, ->, orange] (0,0,0) --  (S);
+
+  \draw[tdplot_rotated_coords, thin] (0, 0, 0.05) -- (0, 0.05, 0.05) -- (0, 0.05, 0);
+  \draw[tdplot_rotated_coords, thin] (0.05, 0, 0) -- (0.05, 0.05, 0) -- (0, 0.05, 0);
+
+\end{tikzpicture}
+\hspace{0.5cm}
+\begin{tikzpicture}[scale=5, tdplot_main_coords]
+  \draw[white] (0, 0, 0) -- (0, 0, -\buffer);
+  \tdplotsetcoord{P}{\pR}{\pZd}{\pAz}
+  \tdplotsetcoord{S}{\sR}{\sZd}{\sAz}
+  \tikzset{>=latex}
+  \coordinate (origin) at (0, 0, 0);
+
+  \camera
+
+  \tdplotsetrotatedcoords{\pAz}{\pZd}{0}
+  \tdplotsetrotatedcoordsorigin{(origin)}
+  \draw[tdplot_rotated_coords, thick,->] (0,0,0) -- (0.5,0,0) node[anchor=east]{$x$};
+  \draw[tdplot_rotated_coords, thick,->] (0,0,0) -- (0,0.5,0) node[anchor=north west]{$y$};
+  \draw[tdplot_rotated_coords, thick,->] (0,0,0) -- (0,0,0.7) node[anchor=east]{$z$};
+  \draw[tdplot_rotated_coords, thin] (0, 0, 0.05) -- (0, 0.05, 0.05) -- (0, 0.05, 0);
+  \draw[tdplot_rotated_coords, thin] (0.05, 0, 0) -- (0.05, 0.05, 0) -- (0, 0.05, 0);
+
+
+  \draw[thick, ->, darkRed] (0,0,0) --  (P) node[midway, anchor=north east] {$f$};
+  \draw[thick, ->, orange] (0,0,0) --  (S);
+
+  \draw[thick, ->, orange, dashed] (0,0,0) --  \directlua{insert_coord(m_s)};
+\end{tikzpicture}
+\egroup

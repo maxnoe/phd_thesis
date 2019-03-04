@@ -1,0 +1,22 @@
+seed: 0
+
+selection:
+    num_pixel_in_shower:
+      - '>='  # needs to be in quotes because > and ! are special character in yaml
+      - 10
+    num_islands:
+      - <
+      - 8
+    length:
+      - <
+      - 70
+    width:
+      - <
+      - 35
+    leakage1:
+      - <
+      - 0.6
+    leakage2:
+      - < # string representation also possible
+      - 0.85
+    

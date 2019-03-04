@@ -1,0 +1,11 @@
+function: power_law
+phi_0: 
+  value: 2.83e-11
+  unit: TeV^-1 cm^-2 s^-1
+spectral_index: -2.7
+e_ref:
+    value: 1.0
+    unit: TeV
+label: Production Spectrum
+color: lightgray
+

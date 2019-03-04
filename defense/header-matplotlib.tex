@@ -1,0 +1,13 @@
+\usepackage{fontspec}%
+
+\usepackage[locale=DE]{siunitx}
+\usepackage[mathrm=sym]{unicode-math}
+
+\setsansfont{Akkurat Office}%
+\setmonofont[Scale=MatchLowercase]{Fira Code}%
+\setmathfont{Fira Math}
+
+\usepackage{xparse}
+\NewDocumentCommand \param {m} {\ensuremath{\mathtt{#1}}}
+\let\textd\d
+\RenewDocumentCommand \d {m} {\TextOrMath{\textd{#1}}{\mathinner{\symup{d}#1}}}

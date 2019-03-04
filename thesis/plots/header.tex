@@ -1,0 +1,41 @@
+% \usepackage[a-3u]{pdfx}
+
+% fonts 
+\usepackage{fontspec}
+% workadound for broken microtype in TL2018
+\usepackage{luatexbase}
+
+
+% math
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+\usepackage[
+  mathrm=sym,        % use math font for mathrm, not text font
+  math-style=ISO,    
+  bold-style=ISO,   
+  sans-style=italic,
+  nabla=upright,
+  partial=upright,
+]{unicode-math}
+
+\usepackage[
+  locale=US,
+  separate-uncertainty=true,
+  per-mode=reciprocal,
+]{siunitx}
+\sisetup{math-micro=\text{µ},text-micro=µ}
+
+
+\input{commands.tex}
+
+% for pdf/a compliance, see https://tex.stackexchange.com/a/474336/59716
+\pdfvariable omitcidset=1
+
+\setromanfont{Libertinus Serif}
+\setsansfont{Libertinus Sans}
+\setmonofont{Fira Mono}[Scale=MatchLowercase]
+\setmathfont{Libertinus Math}
+\setmathfont{XITS Math}[range={scr, bfscr}]
+\setmathfont{XITS Math}[range={cal, bfcal}, StylisticSet=1]

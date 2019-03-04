@@ -1,0 +1,22 @@
+backend: pgf
+
+# size in inches
+figure.figsize: 1.8, 3
+figure.dpi: 300
+font.family: serif
+savefig.bbox: tight
+savefig.pad_inches: 0.0
+savefig.transparent: True
+
+font.size: 9
+legend.fontsize: medium
+xtick.labelsize: 9
+ytick.labelsize: 9
+
+# use fontspec and unicode-math in header
+pgf.rcfonts: False
+
+text.usetex : True
+pgf.texsystem : lualatex
+pgf.preamble : \input{header.tex}
+image.interpolation: none

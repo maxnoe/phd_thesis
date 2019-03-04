@@ -1,0 +1,38 @@
+# regularization parameter, null = no regularization
+# smaller values mean stronger regularization
+tau: 0.1
+
+# Estimate background from the off positions
+background: True
+
+# reference energy
+e_ref:
+  value: 1
+  unit: GeV
+
+
+# binning, five bins per decade in energy
+e_true_low:
+  value: 501.2  # 10^2.7
+  unit: GeV
+
+e_true_high: 
+  value: 31622 # 10^4.5
+  unit: GeV
+
+n_bins_true: 9
+
+e_est_low:
+  value: 400
+  unit: GeV
+
+e_est_high:
+  value: 40
+  unit: TeV
+
+n_bins_est: 25
+
+
+# mcmc paramters
+n_burn_steps: 5000
+n_used_steps: 20000

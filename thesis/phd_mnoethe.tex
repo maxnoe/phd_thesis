@@ -1,0 +1,84 @@
+% Metadata for pdf/a compliance
+\begin{filecontents*}[overwrite]{\jobname.xmpdata}
+\Title{Monitoring the High Energy Universe–Open, Reproducible, Machine Learning Based Analysis for the First G-APD Cherenkov Telescope}
+\Author{Maximilian Nöthe}
+\Language{en-US}
+\Keywords{PHD thesis\sep Dissertation\sep Gamma-Ray Astronomy\sep FACT}
+\Publisher{TU Dortmund}
+\Date{2019}
+\end{filecontents*}
+
+\documentclass[
+  BCOR=12mm,
+  open=right,
+  cleardoublepage=plain,
+  bibliography=totoc,
+  numbers=noenddot,       % no dot after figure/table number
+  captions=tableheading,  % correct spacing for table headings
+  captions=topbeside,
+  titlepage=firstiscover, % symmetrical margins on title page
+  headings=normal,        % size of chapter headings slightly smaller
+]{scrbook}
+
+\input{packages.tex}
+\input{settings.tex}
+\input{acronyms.tex}
+\input{commands.tex}
+\input{fonts.tex}
+\input{bibliography.tex}
+\input{code.tex}
+\recalctypearea
+
+
+\title{Monitoring the High Energy Universe}
+\subtitle{Open, Reproducible, Machine Learning Based Analysis\\ for the First G-APD Cherenkov Telescope}
+\author{Maximilian Nöthe}
+\date{2020}
+
+
+\begin{document}
+\frontmatter
+\newgeometry{margin=2cm, bottom=3cm}
+\input{titlepage.tex}
+\restoregeometry
+{\small\input{chapters/abstract.tex}}
+
+% make toc appear on two facing pages
+\KOMAoptions{open=left}
+\tableofcontents
+\KOMAoptions{open=right}
+
+\mainmatter
+
+\part{Sensitivity of the First G-APD Cherenkov Telescope}
+\input{chapters/introduction.tex}
+\input{chapters/fact.tex}
+\input{chapters/simulations.tex}
+\input{chapters/preprocessing.tex}
+\input{chapters/reconstruction.tex}
+\input{chapters/sensitivity.tex}
+\input{chapters/spectrum.tex}
+
+\part{Automatization of the First G-APD Cherenkov Telescope}
+\input{chapters/shifthelper.tex}
+
+\input{chapters/conclusions.tex}
+
+\backmatter
+\defbibnote{pre}{%
+  For closed access publications, also an open access 
+  preprint, usually from the \href{https://arxiv.org/}{arXiv}, is provided.
+  Where an open access version could not been found, this is noted.
+}
+\printbibliography[prenote=pre]
+\printglossaries
+\input{chapters/appendix.tex}
+\cleardoublepage
+\KOMAoptions{open=any}
+\input{chapters/eid.tex}
+
+\newgeometry{margin=3cm, bottom=5cm}
+\input{chapters/acknowledgements.tex}
+\restoregeometry
+
+\end{document}

@@ -1,0 +1,39 @@
+RUNNR    {{ run.id }}
+EVTNR    1
+NSHOW    {{ run.n_showers }}
+PRMPAR   {{ run.primary_particle }}
+
+ESLOPE  {{ run.spectral_index }}
+ERANGE  {{ run.energy_min }} {{ run.energy_max }}
+
+THETAP  {{ run.zenith_min }} {{ run.zenith_max }}
+PHIP    {{ run.azimuth_min }} {{ run.azimuth_max }}
+VIEWCONE 0.0 {{ run.viewcone }}
+
+TELESCOPE  0. 0. 0. 5e2 0         Single Telescope with 5m radius
+
+SEED {{ run.id * 10 + 1 }} 0 0
+SEED {{ run.id * 10 + 2 }} 0 0
+SEED {{ run.id * 10 + 3 }} 0 0
+SEED {{ run.id * 10 + 4 }} 0 0
+
+TSTART T
+CWAVLG 290 900
+CERSIZ {{ run.bunch_size }}                          
+CSCAT {{ run.reuse }} {{ run.max_radius * 100 }} 0
+ECUTS 0.3 0.3 0.02 0.02           
+
+OBSLEV 2200e2
+MAGNET 30.419 23.856             Geomag EMM2017 for 28.761647° N, -17.891116° W,
+                                 2200m height, 2013-12-31
+ARRANG -6.15
+ATMOSPHERE 8 N                   La Palma Winter
+
+DIRECT ./
+DATBAS F
+
+PAROUT F F
+CERFIL 0                         Disable corsika raw cherenkov output
+MAXPRT 0
+TELFIL {{ output_file }}
+EXIT

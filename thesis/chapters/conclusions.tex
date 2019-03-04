@@ -1,0 +1,112 @@
+\RedeclareSectionCommand[beforeskip=-2\baselineskip]{chapter}
+\chapter{Conclusions and Outlook}\label{chp:outlook}
+In the course of this thesis, I presented the work performed to improve the capabilities
+of the \facttools{} data analysis pipeline from the necessary simulations
+to the event reconstruction and the operation of the \gls{fact} telescope itself.
+
+For the simulations, several large improvements were made.
+Switching to the most recent version of \gls{corsika} available at the time
+resulted in much faster computation and inclusion of the latest models for
+hadronic interactions.
+With the implementation of \texttt{mopro} in version 3, \gls{fact} has the means
+to produce the necessary amounts of simulations as quick as possible in a reproducible
+and nearly completely automatized manner.
+This enabled producing enough proton statistics to be able to calculate spectral
+sensitivity on simulated data for the first time, which was computationally infeasible
+before.
+It also dramatically reduced the effort necessary to simulate different sets
+of simulations.
+However, the feedback loop for changes is still very slow and
+the main reason, why even after eight years of operation, agreement of
+simulations and observed data is still the most limiting issue at the lower energies.
+To better narrow down the possible reasons, cross checking the results of the detector simulation
+with other programs than \texttt{ceres}, such as \texttt{sim\_telarray}~\cite{iactatmo},
+might give valuable insights on where to search for the remaining disagreements.
+Compared to the older version of \texttt{mopro}, it is also possible to
+easily run simulations using multiple compile-time configurations of \gls{corsika}.
+This was used to make the decision to drop \gls{fluka} and use \gls{urqmd} for the low energy hadronic interactions.
+
+The main result of my thesis, achieving a gain of \SI{45}{\percent} in integral sensitivity over previous works,
+is the sum of many minor changes to the analysis software over the course of almost four
+years but is dominated by the introduction of a new, machine learning based reconstruction of the particle origin via the \param{disp} method.
+The implemented method improves over previous approaches by fully utilizing
+machine learning in the two step procedure of estimating absolute value and sign of
+\param{disp}.
+Background suppression and angular resolution are improved dramatically at
+the cost of reduced effective area at the lowest energies.
+
+The new method for the reconstruction of gamma-ray origin together
+with the elimination of features dependent on a known point-source position
+enabled the first creation of skymaps of \gls{fact} data.
+A smaller dataset of events reconstructed using this improved analysis and
+the corresponding instrument response functions were made public and then used to publish the first multi-instrument
+analysis based on open data by four of the currently operating Cherenkov telescopes
+in \cite{open-crab}.
+
+Further improvements can be made to this analysis chain, most crucially 
+through the improvement of agreement between observations and simulations.
+A very promising approach here is the addition of measured electronic and night sky background
+noise to simulated data~\cite{phd-buss,master-bulinski}.
+As soon as this is achieved, more can be gained by optimizing the
+hyperparameters of the reconstruction models,
+as the ones used in this work are just \emph{a working} solution but no exhaustive
+search for an optimal set of parameters has been performed.
+As the quality metrics of background suppression and origin reconstruction are
+highly energy dependent, most telescopes employ energy dependent event selection
+criteria, usually optimized for the best sensitivity in each interval of estimated energy.
+This approach is also worth pursuing for the analysis presented here and could
+improve acceptance and sensitivity especially in the lowest energies.
+Deep learning approaches have shown promising results for other telescopes~\cite{hess_deep_learning}
+and might be able to outperform the \emph{classical}
+event reconstruction once the necessary simulation agreement has been reached.
+
+For the unfolding, the full potential of the Bayesian likelihood-based approach 
+using MCMC-sampling has not yet been employed.
+In \cite{phd-boerner}, also systematic uncertainties—like certain not perfectly
+known detector properties—were modeled in the likelihood.
+This could also be used for \gls{fact}, e.\,g.\ to model overall light detection efficiency.
+Another extension of the likelihood is also treating the background as Poisson distributed, as done in \cite{phd-bruegge}.
+
+Lessons learned during the development of \facttools{} have already been applied 
+and contributed into the analysis software \texttt{ctapipe}~\cite{ctapipe,ctapipe-icrc} for
+the upcoming Cherenkov Telescope Array, such as the calculation of the Hillas parameters
+based on a principal component analysis and several implementations of other image features.
+I also contributed a major part of the coordinate system transformations in \texttt{ctapipe},
+which only was possible through the experience gained with the work on \gls{fact}.
+The python library to read the \texttt{eventio} output of \gls{corsika},
+first implemented to read information about the simulated \texttt{mopro} events,
+was extended by Dominik Neise and me to also be able to read the output of \texttt{simtel\_array}
+and it is now used to read the \gls{cta} simulations into \texttt{ctapipe}.
+The \texttt{aict-tools}, including the reconstruction of origin based on the 
+\texttt{disp} method implemented for this thesis,
+is currently being for reconstruction of the first data taken by the CHEC~\cite{chec} camera prototype for the Small Sized Telescope of \gls{cta}~\cite{chec-talk}.
+
+The \texttt{shifthelper} had a large impact on everyone in the 
+\gls{fact} collaboration.
+It made observations under nominal conditions nearly effortless, 
+increased the duty cycle by directly alerting the operators in case
+human intervention was necessary and it improved the safety of the instrument
+by continuously checking for adverse conditions and making sure the telescope is parked in
+the morning.
+Further automatizations are planned, e.\,g.\ automatically parking the telescope
+in case of strong wind, instead of calling an operator to perform this task.
+
+In the last several years, focus in the scientific community and especially
+in particle and astroparticle physics has shifted away from proprietary tools
+and limited access to observed data towards the recognition, that 
+open source software, publicly available data and open access publications
+are a bare necessity for successful and reproducible science.
+Gamma-ray astronomy has lagged behind quite a bit in this regard,
+but with the advent of \gls{cta}, which is to be operated as open observatory, this is changing.
+In this light, a major focus of this work has been placed on reproducibility and basing the analysis on publicly available, widely-used, battle-tested tools.
+With unfortunate exception of \gls{corsika},
+the entire analysis is based on \gls{foss} and in general,
+the necessity for human interaction at every step of the way was minimized as much as possible.
+The analysis results are stored in standardized data formats,
+widely used even outside the astroparticle physics community.
+Together with the final steps described in \cite{phd-bruegge} it is now possible to
+publish \gls{fact} data in the Open Data Format for Gamma-Ray Astronomy~\cite{ogadf},
+enabling joint analysis of multi-instrument data for the first time, as we did in~\cite{open-crab}.
+This document with all included graphics can be created from the input data,
+configuration and text files by issuing a single command after installing the necessary software.
+Detailed instructions can be found in Appendix~\ref{apx:reproducing}.

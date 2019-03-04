@@ -1,0 +1,136 @@
+\section{Monte Carlo Production Software}\label{sec:mopro}
+
+
+To run the large number of tasks required for the Monte Carlo simulations,
+a software library and a set of executable programs were developed,
+with the following requirements identified:
+
+\begin{itemize}[noitemsep]
+  \item Templating for the configuration files of the simulation programs,
+    so that job parameters can be stored centrally.
+  \item Tracking of job status, input and output files.
+  \item Automatic installation and compilation of the needed software.
+  \item With the above, also the possibility to use several compiled versions
+    of \gls{corsika} and \texttt{ceres} to enable comparisons.
+  \item Possibility to run computation tasks on multiple backends,
+    at least on the \texttt{SLURM}~\cite{slurm} cluster engine and locally using multiple CPU cores.
+  \item Reproducibility of jobs.
+  \item Central job queue optionally with multiple consumers.
+  \item Collection and compression of simulation results.
+  \item Possibility to use multiple database engines, at least
+    \texttt{sqlite} for easy, local processing and testing and a
+    fully grown relational database like MySQL or PostgreSQL for larger
+    productions.
+\end{itemize}
+
+The software called \mopro~\cite{mopro3} was implemented in \texttt{python}.
+Two similar projects existed before, but were centered around the
+older \gls{mmcs} and had several shortcomings with respect to the requirements
+listed above, lacking support for automatic installation of software,
+multiple consumers, running jobs locally and on multiple sites.
+
+The job configuration and simulation settings are stored in a relational
+database, using the \texttt{peewee}\cite{peewee} Object Relational Mapper.
+The relational mapper allows access to the database from \texttt{python} as objects
+and supports all major database systems.
+
+Templating of the configuration files is done using the \texttt{jinja2} templating
+library, an example of a \gls{corsika} input card template can be found in Appendix~\ref{apx:corsika_input}, the \ceres{} template in Appendix~\ref{apx:ceres-template}.
+The expressions in double-curly braces are evaluated and replaced for each
+database entry before giving it as input to \gls{corsika} and \ceres{}, respectively.
+
+Two computation backends are currently implemented.
+First, jobs can  be submitted
+on a cluster using \texttt{SLURM}, which is used for job management
+at the LIDO3 cluster in Dortmund and the LESTA cluster in Geneva, where \gls{fact}'s data
+is stored.
+Jobs can also be processed using local worker processes, which eases development
+and running small simulation productions.
+Other backends can be added by implementing a small number of required methods, e.\,g.\ for submitting, canceling and getting the status of jobs.
+
+The main program queries the database in certain intervals for pending jobs,
+and if possible submits them for computation to the workers.
+An extra thread in the main program uses a \texttt{ØMQ}~\cite{zeroMQ} server socket
+to receive job status updates which are then persisted to the database.
+
+The simulation programs \gls{corsika} and \ceres{} are wrapped in small scripts to
+copy input files to the local working node, handle failures and communicate
+status transitions to the main program as mentioned above.
+
+When a new job is submitted to the workers,
+the main program makes sure all necessary software is installed, creates
+the required directories for output and log files and
+creates the configuration files from the templates and parameters stored
+in the database.
+
+As any \ceres{} job depends on the successful \gls{corsika} job it uses 
+as input, \ceres{} jobs are started when their corresponding \gls{corsika}
+job finishes successfully and it was computed at the same location.
+
+\texttt{mopro3} itself is configured using a \texttt{yaml} file.
+The settings include credentials for downloading \gls{corsika},
+the database configuration, 
+which temporary directory to use for job processing
+and options for the workers like which queues to use on a \texttt{SLURM} cluster
+or how many CPUs to use in parallel for local processing.
+
+\subsection{Database Structure}
+
+The \mopro{} database contains five tables,
+one describing general settings for \gls{corsika},
+one for each individual \gls{corsika} run, the same two tables for the
+\ceres{} jobs and one table describing the job states.
+
+For the \gls{corsika} settings and runs, a compromise between flexibility and
+complexity of the database and implementation was made.
+\gls{corsika} has both compile time and execution time options.
+The compile time options are normally set interactively by executing
+the \gls{coconut} program.
+This creates a header file \texttt{config.h} defining preprocessor variables that result in conditionally
+compiling the corresponding code. 
+This is used among other things for the interaction models, thus the same \gls{corsika}
+installation cannot be used with different interaction models.
+Instead of implementing all possible compile time options in
+the \texttt{CorsikaSettings} table and generating the \texttt{config.h} file
+at installation time, the user has to generate the file using \gls{coconut} and 
+the full file is stored in the database and used to compile \gls{corsika}.
+This also has the advantage of being rather agnostic about the version of \gls{corsika}.
+
+A similar approach is taken for the large number of runtime 
+configuration options \gls{corsika} supports, which in turn also depend on
+the compile time configuration.
+Only the most fundamental settings most likely to change
+between runs of the same kind are stored in the database.
+Other parameters have to be changed via the input card template in the \texttt{CorsikaSettings} table.
+This also has the advantage that they are very unlikely to change with a new release of \gls{corsika}, as all these options are very fundamental,
+improving maintainability of \texttt{mopro3}.
+In most cases, no changes should be required when a new minor version update of \gls{corsika} is released.
+
+The \texttt{Status} table stores all possible states a run can reside in.
+All states and their possible state changes are shown in \autoref{fig:states}.
+\begin{figure}
+  \centering
+  \begin{tikzpicture}
+    \tikzset{change/.style={font=\footnotesize, text width=3cm, color=gray, midway}}
+    \node[fill=blue!20, font=\ttfamily] (created) {\strut created};
+    \node[fill=blue!20, font=\ttfamily, right=1cm of created.east] (queued) {\strut queued};
+    \node[fill=blue!20, font=\ttfamily, right=1cm of queued.east] (running) {\strut running};
+    \node[fill=green!20, font=\ttfamily, right=3cm of running.east] (success) {\strut success};
+    \node[fill=red!20, font=\ttfamily, below right=1cm and 3cm of running.east] (failed) {\strut failed};
+    \node[fill=red!20, font=\ttfamily, above right=1cm and 3cm of running.east] (walltime) {\strut walltime\_exceeded};
+
+    \draw[thick, ->] (created.east) to[out=30, in=150] node[change, above=0.25cm, align=center] {Job is submitted to a cluster} (queued.west);
+
+    \draw[thick, ->] (queued.east) to[out=-30, in=210] node[change, below=0.25cm, align=center] {Job starts executing} (running.west);
+
+    \draw[thick, ->] (running.east) to node[change, above, align=center] {Job finished} (success.west);
+
+    \draw[thick, ->] (running.east) to[out=-45, in=180] node[change, below left, align=center] {An error occurred} (failed.west);
+
+    \draw[thick, ->] (running.east) to[out=45, in=180] node[change, above left, align=right] {Job not finished in walltime} (walltime.west);
+  \end{tikzpicture}
+  \caption{%
+    Possible state transitions for the \texttt{mopro3} processing.
+    Blue indicates unfinished jobs, green successfully finished jobs and red failure modes.
+  }\label{fig:states}
+\end{figure}

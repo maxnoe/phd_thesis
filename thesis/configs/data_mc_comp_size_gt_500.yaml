@@ -1,0 +1,109 @@
+n_bins: 100
+
+event_selection:
+    size: ['gt', 500]
+
+datasets:
+  - label: Crab Nebula observations
+    path: ../build/apa85/crab_precuts.hdf5
+    kind: observations
+    color: black
+
+  - label: Protons (all particle spectrum)
+    path: ../build/apa85/proton_precuts.hdf5
+    kind: protons
+    n_showers: 4319600000
+    spectral_index: -2.0
+    max_impact: 500
+    viewcone: 6
+    e_min: 100
+    e_max: 200.0e+3
+    sample_fraction: 1.0
+  
+  - label: Protons and helium combined
+    show_parts: false
+    parts:
+      - label: Protons
+        path: ../build/apa85/proton_precuts.hdf5
+        kind: protons
+        color: 'C1'
+        alpha: 0.5
+        n_showers: 4319600000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 10922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.705
+            e_ref:
+                value: 1
+                unit: GeV
+
+      - label: Helium
+        path: ../build/apa85/helium_precuts.hdf5
+        kind: protons
+        color: 'C1'
+        alpha: 0.2
+        n_showers: 108000000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 5922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.65
+            e_ref:
+                value: 1
+                unit: GeV
+
+
+include_columns:
+    - size
+    - width
+    - length
+    - concentration_core
+    - concentration_cog
+    - num_pixel_in_shower
+    - leakage1
+
+columns:
+    size:
+        transform: np.log10
+        yscale: log
+        xlabel: '$\log_{10}(\param{size})$'
+        legend_loc: 'lower left'
+        limits: [1.6, 4.55]
+
+    num_pixel_in_shower:
+        limits: [-0.5, 399.5]
+        n_bins: 50
+        yscale: log
+        xlabel: '\param{num\_pixel\_in\_shower}'
+
+    width:
+        xlabel: '\param{width}'
+        limits: [0, 30]
+
+    length:
+        xlabel: '\param{length}'
+
+    leakage1:
+        xlabel: '\param{leakage1}'
+        yscale: log
+
+    concentration_core:
+        xlabel: '\param{concentration\_core}'
+
+    concentration_cog:
+        xlabel: '\param{concentration\_cog}'

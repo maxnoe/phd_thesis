@@ -1,0 +1,32 @@
+\begin{frame}[c]
+  \begin{tikzpicture}
+    \tikzset{con/.style={-{Triangle[length=0.25cm, width=0.3cm]}, line width=5pt}}
+    \node[anchor=west] (RAW) at (0, 0) {\includegraphics[width=3cm]{build/raw_data.pdf}};
+    \node (CALIB) at (5.5, 0) {\includegraphics[width=3cm]{build/calibrated.pdf}};
+    \node (IMAGE) at (11, 0)  {\includegraphics[width=6cm]{build/camera_image_0.pdf}};
+    \node (CLEAN) at (11, -3.5)  {\includegraphics[width=6cm]{build/camera_image_1.pdf}};
+    \draw[con] (IMAGE.south) -- (CLEAN.north) node[midway, left] {\bfseries Pixel-Auswahl};
+    \node (PARAMS) at (4.5, -5) {%
+      \ttfamily\small%
+      \begin{tabular}{r @{ } r @{ } r @{ $\cdots$ } r}
+        event & width & length & size \\
+        0 & 0.15 & 0.52 & 1253.1 \\
+        2 & 0.05 & 0.12 & 321.3 \\
+        5 & 0.08 & 0.19 & 512.7 \\
+      \end{tabular}
+    };
+    \draw[con] (CLEAN.south) to[out=270, in=0] node[anchor=north,midway] {\bfseries Parametrisierung} (PARAMS.east) ;
+    \node[anchor=west] (RECO) at (0, -2.5) {%
+      \ttfamily\small%
+      \begin{tabular}{r @{ } r @{ } r @{ } r @{ } r @{ } r}
+        event & energy & gammaness & ra & dec & time\\
+        0 & 1500 & 0.82 & 83.6 & 22.1 & 59024.63123\\
+        2 & 400 & 0.73 & 83.5 & 21.9  & 59024.64183 \\
+        5 & 680 & 0.92 & 83.7  & 22.0 & 59024.67093 \\
+      \end{tabular}
+    };
+    \draw[con] (PARAMS.north) to[out=90, in=270] node[left, midway, below left, text width=2cm] {\centering\bfseries Rekonstruktion} (RECO.south);
+    \draw[con] (RAW.east) -- (CALIB.west) node[above=0.75cm, midway] {\centering\bfseries Kalibrierung};
+    \draw[con] (CALIB.east) -- (IMAGE.west) node[above=0.75cm, midway] {\centering\bfseries Puls-Extraktion};
+  \end{tikzpicture}
+\end{frame}

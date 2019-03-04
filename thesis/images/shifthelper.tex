@@ -1,0 +1,40 @@
+\tikzset{
+  lapalma/.style={draw=darkRed, thick, rounded corners},
+  dortmund/.style={draw=tugreen, thick, rounded corners},
+  external/.style={draw=darkBlue, thick, rounded corners},
+}
+
+\node[lapalma, font=\large\ttfamily, anchor=east, align=center] (smartfact) at (0, 0) {\strut smartfact};
+\node[lapalma, anchor=east, align=center] (database) at (0, -1.5) {%
+  \includegraphics[width=1.5cm]{images/mysql.pdf} 
+};
+\node[lapalma, font=\large\ttfamily, anchor=east, align=center] (heartbeat) at (0, 1.5) {\strut heartbeat};
+
+
+\node[dortmund, font=\large\ttfamily, anchor=center, align=center] (shifthelper) at (3, 0) {\strut shifthelper};
+
+\node[dortmund, font=\large\ttfamily, anchor=west, align=center] (webinterface) at (6, 2) {\strut webinterface};
+
+\node[external, anchor=center, align=center, anchor=west] (telegram) at (6, 0) {%
+  \includegraphics[height=1cm]{images/telegram.png}\\
+  Messenger%
+};
+\node[external, anchor=center, align=center, anchor=west] (twilio) at (6, -2.2) {%
+  \includegraphics[width=2cm]{images/twilio.png}\\
+  Call Provider%
+};
+
+\tikzset{>={Stealth[length=3mm]}}
+\draw[thick, black, <-] (shifthelper.west) to [out=150, in=0] (smartfact.east);
+\draw[thick, black, <-] (shifthelper.west) to [out=230, in=0] (database.east);
+
+\draw[thick, black, ->] (shifthelper.east) to[out=0, in=180] (telegram.west);
+\draw[thick, black, <->] (shifthelper.east) to[out=30, in=220] (webinterface.west);
+\draw[thick, black, ->] (shifthelper.east) to[out=-70, in=180] (twilio.west);
+
+\draw[thick, black, <->] (heartbeat.east) to[out=0, in=160] (webinterface.west);
+
+\node[anchor=west, align=center, font=\large, right=0.5cm of telegram.east]  {%
+  {\fontsize{60}{60}\faBed \selectfont}\\
+  Shifter-On-Call%
+};

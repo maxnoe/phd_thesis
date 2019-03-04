@@ -1,0 +1,6 @@
+[submodule "fact-tools"]
+	path = fact-tools
+	url = git@github.com:fact-project/fact-tools
+[submodule "defense/tudobeamertheme"]
+	path = defense/tudobeamertheme
+	url = git@github.com:maxnoe/tudobeamertheme

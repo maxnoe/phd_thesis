@@ -1,0 +1,169 @@
+#                              General
+# -------------------------------------------------------------------------
+# Use this if you want to setup the logging stream for the jobs
+# (overwrites command line options)
+# -------------------------------------------------------------------------
+MLog.VerbosityLevel: 4
+MLog.DebugLevel:     0
+MLog.NoColors:       no
+
+#                                   Ceres
+# -------------------------------------------------------------------------
+# Configure Eventloop
+# -------------------------------------------------------------------------
+Overwrite: yes
+
+
+# -------------------------------------------------------------------------
+# Use this to setup binnings. For more details see: MBinning::ReadEnv
+# -------------------------------------------------------------------------
+BinningImpact.Raw:  40 0 1000
+BinningTrigPos.Raw: 300 -25 275
+
+
+# -------------------------------------------------------------------------
+# Initialize random number generator (see MJob::InitRandomNumberGenerator)
+# -------------------------------------------------------------------------
+RandomNumberGenerator: TRandom3
+RandomNumberSeedValue: 1
+
+# -------------------------------------------------------------------------
+# Some setup for the atmosphere. The default should be well suited.
+# -------------------------------------------------------------------------
+MSimAtmosphere.FileAerosols: {{ resource_directory }}/atmosphere-aerosols.txt
+MSimAtmosphere.FileOzone:    {{ resource_directory }}/atmosphere-ozone.txt
+
+
+# -------------------------------------------------------------------------
+# Here you can control the poiting of the telescope. To switch on
+# off-target observations set a value for the distance !=0 [deg].
+# For details see MSimPointingPos
+# -------------------------------------------------------------------------
+{% if run.diffuse %}
+MSimPointingPos.OffTargetDistance: -{{ run.off_target_distance }}
+{% else %}
+MSimPointingPos.OffTargetDistance: {{ run.off_target_distance }}
+{% endif %}
+
+
+# -------------------------------------------------------------------------
+# Setup the reflector and camera geometry
+# -------------------------------------------------------------------------
+Reflector.Constructor: MReflector
+
+# For the file definition see MReflector::ReadFile
+
+Reflector.FileName: {{ resource_directory }}/reflector.txt
+Reflector.SetSigmaPSF: {{ settings.psf_sigma }}
+MGeomCam.Constructor:   MGeomCamFACT();
+
+#MSimBundlePhotons.FileName: resmc/fact/dwarf-fact.txt
+
+# Set the APD type (1: 30x30 <default>, 2: 60x60, 3:60x60(ct=15%))
+MSimAPD.Type:                   0
+MSimAPD.NumCells:               60
+MSimAPD.DeadTime:               {{ settings.apd_dead_time }}
+MSimAPD.RecoveryTime:           {{ settings.apd_recovery_time }}
+MSimAPD.CrosstalkCoefficient:   {{ settings.apd_cross_talk }}
+MSimAPD.AfterpulseProb1:        {{ settings.apd_afterpulse_probability_1 }}
+MSimAPD.AfterpulseProb2:        {{ settings.apd_afterpulse_probability_2 }}
+
+MSimExcessNoise.ExcessNoise:    {{ settings.excess_noise }}
+
+# -------------------------------------------------------------------------
+# Setup the absorption, conversion efficiency and angular acceptance
+# -------------------------------------------------------------------------
+MirrorReflectivity.FileName: {{ resource_directory }}/mirror-reflectivity.txt
+PhotonDetectionEfficiency.FileName: {{ resource_directory }}/pde.txt
+ConesAngularAcceptance.FileName: {{ resource_directory }}/cone-angular-acceptance.txt
+ConesTransmission.FileName: {{ resource_directory }}/cone-transmission.txt
+
+AdditionalPhotonAcceptance.Function.Name: {{ settings.additional_photon_acceptance }}
+AdditionalPhotonAcceptance.Function.Npx:  100
+AdditionalPhotonAcceptance.Function.Xmin: 290
+AdditionalPhotonAcceptance.Function.Xmax: 900
+
+# -------------------------------------------------------------------------
+# Setup what in MMCS would be called "additional spot size"
+# -------------------------------------------------------------------------
+#MSimPSF.Sigma: -1
+#MSimReflector.DetectorMargin: 0
+
+# -------------------------------------------------------------------------
+# Setup the dark counts (FrequencyFixed) and the NSB noise per cm^2
+# -------------------------------------------------------------------------
+MSimRandomPhotons.FrequencyFixed: {{ settings.dark_count_rate }}
+{% if settings.nsb_rate %}
+MSimRandomPhotons.FrequencyNSB: {{ run.nsb_rate }}
+{% else %}
+MSimRandomPhotons.FileNameNSB:  {{ resource_directory }}/nsb.txt
+{% endif %}
+
+
+# -------------------------------------------------------------------------
+# Setup the trigger
+# -------------------------------------------------------------------------
+# This line could be omitted but then the discriminator would be
+# evaluated for all pixels not just for the pixels which are
+# later "connected" in the trigger (used in the coincidence map)
+MSimTrigger.FileNameRouteAC: {{ resource_directory }}/route-ac.txt
+MSimTrigger.DiscriminatorThreshold: {{ settings.discriminator_threshold }}
+
+MSimTrigger.CableDelay: 21.0
+MSimTrigger.CableDamping: -0.96
+MSimTrigger.CoincidenceTime: 0.5
+
+# Every Pixel(!) should see the same signal independant of its size
+MSimCalibrationSignal.NumPhotons: 24
+MSimCalibrationSignal.NumEvents:  1000
+
+IntendedPulsePos.Val: 26
+
+# -------------------------------------------------------------------------
+# Setup the FADC
+# -------------------------------------------------------------------------
+
+MRawRunHeader.SamplingFrequency: 2000
+MRawRunHeader.NumSamples:        300
+MRawRunHeader.NumBytesPerSample: 2
+MRawRunHeader.FadcResolution:    12
+
+MSimCamera.DefaultOffset:       -1850.0
+MSimCamera.DefaultNoise:        2.8125
+MSimCamera.DefaultGain:         22.553
+
+
+# Value for the fudgefactor in the calculation of the accoupling:
+MSimCamera.ACFudgeFactor: 0.3136
+MSimCamera.ACTimeConstant: 20
+
+
+# The number of sampling points is almost irrelevant because they
+# are equidistant, i.e. calculated and no search is necessary.
+# Nevertheless, you must make sure that there are enough points
+# to sample the function accuratly enough.
+# Attention: x in the function is given in slices, so if you change the sampling
+# frequency you have to change also this function
+PulseShape.Function.Name:  {{ settings.pulse_shape_function }}
+PulseShape.Function.Npx:   310
+PulseShape.Function.Xmin:  -10
+PulseShape.Function.Xmax:  300
+
+
+
+# -------------------------------------------------------------------------
+# This is a cut executed after the calculation of the image parameters
+# -------------------------------------------------------------------------
+
+Cut.Inverted: yes
+Cut.Condition: MHillas.fSize>10.0
+
+
+# Does not trigger anyway
+ContEmpty3.Condition: MPhotonEvent.GetNumPhotons<10
+
+MFixTimeOffset.FileName: {{ resource_directory }}/pixel-delays.csv
+ResidualTimeSpread.Val: {{ settings.residual_time_spread }}
+GapdTimeJitter.Val: {{ settings.gapd_time_jitter }}
+
+# last line comment

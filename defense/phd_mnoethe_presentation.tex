@@ -1,0 +1,581 @@
+% vim: spelllang=de
+\PassOptionsToPackage{unicode}{hyperref}
+\documentclass[aspectratio=1610, 9pt]{beamer}
+
+\usetheme{tudo}
+
+
+\setmathfont{XITS Math}[range={cal, bfcal}]
+
+\usepackage[main=german, english]{babel}
+\usepackage[autostyle]{csquotes}
+
+\usepackage{xcolor}
+
+\usepackage{multimedia}
+\usepackage{tcolorbox}
+\usepackage[]{siunitx}
+\setmathfont{Fira Math}
+\AtBeginDocument{\sisetup{math-rm=\mathrm,math-micro=μ}}
+
+\usepackage{grffile}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{shadings}
+\usepackage{tikz-feynman}
+\definecolor{cherenkov}{RGB}{87,202,255}
+\colorlet{gamma}{red!80!black}
+\colorlet{proton}{blue!80!black}
+\colorlet{darkRed}{red!80!black}
+\colorlet{darkBlue}{blue!80!black}
+\usepackage{fontawesome5}
+
+\usepackage[maxcitenames=99]{biblatex}
+\DefineBibliographyStrings{german}{
+	andothers={{et\,al\adddot}},
+}
+\addbibresource{../thesis/references.bib}
+\addbibresource{../thesis/mwl_crab.bib}
+
+\usepackage{hyperref}
+\usepackage{bookmark}
+
+\usepackage{xparse}
+\usepackage{expl3}
+
+\NewDocumentCommand{\pGamma}{}{\ensuremath{\symup{\gamma}}}
+\NewDocumentCommand{\pP}{}{\ensuremath{\symup{e}^{+}}}
+\NewDocumentCommand{\pE}{}{\ensuremath{\symup{e}^{-}}}
+\NewDocumentCommand \bumper {m} {%
+  \begin{frame}[c]
+    \centering \Huge\color{tugreen} #1
+  \end{frame}
+}%
+\newlength{\unit}
+\let\textd\d
+\RenewDocumentCommand \d {m} {\TextOrMath{\textd{#1}}{\mathinner{\symup{d}#1}}}
+
+
+\title{%
+  \texorpdfstring{%
+    \only<1>{Monitoring the High Energy Universe}%
+    \only<2>{Kontinuierliche Beobachtung des hochenergetischen Universums}%
+  }{Disputation Maximilian Nöthe}%
+}%
+\subtitle{%
+  \texorpdfstring{%
+    \only<1>{Open, Reproducible, Machine Learning Based Analysis for the First G-APD Cherenkov Telescope}%
+    \only<2>{Offene, reproduzierbare, auf maschinellem Lernen basierende Analyse für das First G-APD Cherenkov Telescope}%
+  }{Monitoring the High Energy Universe}%
+}%
+\titlegraphic{\includegraphics[height=0.5\textheight]{images/fact.jpg}}
+
+\author[M. Nöthe]{Maximilian Nöthe}
+\date{29.06.2020}
+\institute[{%
+  \includegraphics[height=\headerheight]{logos/sfb876.pdf}%
+  \hspace{0.5cm}%
+  \includegraphics[height=\headerheight]{logos/e5b.pdf}%
+}]{Fakultät Physik – TU Dortmund}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}[c]{Gammaastronomie}
+  \centering
+  \includegraphics[width=\linewidth, height=0.95\textheight, keepaspectratio]{images/overview_no_text.png}\\[-2\baselineskip]
+  \hspace{4cm}[IceCube Kollaboration/NSF]
+\end{frame}
+
+\begin{frame}[c]{Luftschauer}
+  \begin{columns}[T, onlytextwidth]
+    \begin{column}{0.45\textwidth}
+      \onslide<1->{\input{slides/gamma_shower.tex}}%
+    \end{column}%
+    \begin{column}{0.55\textwidth}%
+      \onslide<2->{\input{slides/shower.tex}}%
+    \end{column}%
+  \end{columns}%
+\end{frame}%
+
+{%
+  \setbeamercolor{background canvas}{bg=black}%
+  \begin{frame}[plain]%
+    \centering%
+    \noindent\makebox[\linewidth]{%
+      \movie[autostart]%
+      {\includegraphics[width=\paperwidth - 99sp, height=\paperheight - 99sp, keepaspectratio]{./images/thumbnail.png}}%
+      {./videos/gamma_twice_no_helium.mp4}%
+    }%
+  \end{frame}%
+}%
+
+
+\begin{frame}[b]{First G-APD Cherenkov Telescope}
+  \centering
+  \input{slides/fact.tex}
+  Roque de los Muchachos, La Palma, Spanien \hspace{1cm}Observiert seit Oktober 2011
+\end{frame}
+
+
+\begin{frame}{Beobachtungsstrategie}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.3\textwidth}
+      \begin{itemize}
+        \item Langzeitbeobachtung der hellsten Gammaquellen
+        \item $> \SI{90}{\percent}$ Beobachtungszeit für 7 Quellen
+        \item Hauptsächlich Blazare
+        \item Alarmierung anderer Teleskope bei \enquote{Flares}
+      \end{itemize}
+
+      \begin{description}[Seit 2017]
+        \item[Seit 2012] Remote-Betrieb
+        \item[Seit 2017] \enquote{Shifter-on-Call}
+      \end{description}
+    \end{column}%
+    \hfill%
+    \begin{column}{0.65\textwidth}%
+      \includegraphics[width=\linewidth]{../thesis/build/plots/4fgl_fact_sources.pdf}%
+    \end{column}%
+  \end{columns}%
+\end{frame}
+
+
+\begin{frame}[t]{Der Krebsnebel}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.475\textwidth}%
+      \includegraphics[width=\linewidth]{../thesis/images/crab.jpg}\\[-1.5\baselineskip]%
+      \hspace{1ex}\href{https://apod.nasa.gov/apod/ap170511.html}{\textcolor{white}{apod.nasa.gov/apod/ap170511.html}}
+    \end{column}%
+    \hfill%
+    \begin{column}{0.475\textwidth}
+      \begin{itemize}
+        \item Supernova-Überrest im Sternbild Stier
+        \item Explodiert im Jahr 1054
+        \item Erste entdeckte TeV-Gammaquelle 1989
+        \item \enquote{Standardkerze} der Gammaastronomie
+      \end{itemize}
+    \end{column}%
+  \end{columns}%
+\end{frame}
+
+\begin{frame}
+  \input{slides/dataflow.tex}
+\end{frame}
+
+\begin{frame}[c]
+  \begin{columns}[onlytextwidth, t]
+    \begin{column}{0.475\textwidth}%
+      {\huge Startwerte $→$ Tscherenkow-Licht}
+
+      \begin{center}
+        \begin{tikzpicture}
+          \node[text width=2cm] (corsika) at (0, 0) {\includegraphics[width=\linewidth]{images/proton_12_0deg.xy.png}};
+          \node[anchor=south, yshift=0.2cm, text=black] at (corsika.south) {\huge CORSIKA};
+        \end{tikzpicture}
+      \end{center}
+      \begin{itemize}
+        \item Umstieg 6.5 (2006) → 7.69 (Dez.\,2018)
+        \item Nutzung der iact/atmo Erweiterung
+        \item[$⇒$] Modernere Wechselwirkungsmodelle
+        \item[$⇒$] Wesentlich schnellere Rechnungen
+        \item Notwendig für ausreichende Untergrund-Statistik
+      \end{itemize}
+    \end{column}%
+    \hfill
+    \begin{column}{0.475\textwidth}%
+      {\huge Tscherenkow-Licht $→$ Rohdaten}
+
+      \begin{center}
+        \begin{tikzpicture}
+          \node[text width=2cm] (ceres) at (0, 0) {\includegraphics[width=\linewidth]{images/mars_trim.png}};
+          \node[anchor=south, yshift=0.2cm, fill=white, opacity=0.6, text opacity=1, text=black] at (ceres.south) {\huge CERES};
+        \end{tikzpicture}
+      \end{center}
+      \begin{itemize}
+        \item Raytracing des Reflektors
+        \item Kameraelektronik inklusive Trigger
+      \end{itemize}
+
+      \vspace{0.25cm}
+      \begin{center}
+        \huge mopro3
+      \end{center}
+      \begin{itemize}
+        \item Automatisierung der Produktion
+        \item Mehrere Cluster, aber auch PC
+        \item 100 TB Simulations-Daten
+        \item 75 CPU-Jahre (3 Monate LIDO3)
+        \item Drei Sätze mit unterschiedlichen PDEs
+      \end{itemize}
+    \end{column}%
+  \end{columns}%
+
+\end{frame}
+
+\bumper{Analysekette}
+
+\input{slides/reco.tex}
+
+\begin{frame}[c]{1.7 TeV Gamma}
+  \includegraphics[width=\textwidth]{../thesis/build/plots/image_gamma.pdf}
+\end{frame}
+
+\begin{frame}[c]{15 TeV Proton}
+  \includegraphics[width=\textwidth]{../thesis/build/plots/image_proton.pdf}
+\end{frame}
+
+\begin{frame}[c]{100 GeV Myon}
+  \includegraphics[width=\textwidth]{../thesis/build/plots/image_muon.pdf}
+\end{frame}
+
+\begin{frame}[c]{Bild-Parametrisierung}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.475\textwidth}%
+      \parbox[c][0.9\textheight]{\linewidth}{%
+        \only<1>{\includegraphics[width=\linewidth]{build/hillas_features.pdf}}%
+        \only<2>{\includegraphics[width=\linewidth]{build/leakage.pdf}}%
+      }%
+    \end{column}%
+    \begin{column}{0.475\textwidth}
+      Reduktion von $2 \times 1440$ Werten auf $\sim 50$
+      \begin{itemize}
+        \item Hillas-Parameter
+        \item Schiefe und Kurtosis entlang der Hauptachsen
+        \item \texttt{concentration}
+        \item \texttt{leakage}
+        \item \texttt{num\_islands}
+        \item Deskriptive Statistiken der Licht- und Ankunftszeitverteilungen
+        \item Lineare Regression der Ankunftszeiten entlang der Schauerachse
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}[c]{Ereignis-Selektion}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.475\textwidth}%
+      \begin{align*}
+        \mathtt{num\_pixel\_in\_shower} &\geq 10 \\
+        \mathtt{num\_islands} &< 8 \\
+        \mathtt{length} &< \SI{70}{\milli\meter} \\
+        \mathtt{width} &< \SI{35}{\milli\meter} \\
+        \mathtt{leakage1} &< 0.6  \\
+        \mathtt{leakage2} &< 0.85
+      \end{align*}
+    \end{column}%
+    \begin{column}{0.475\textwidth}
+      Entfernt
+      \begin{itemize}
+        \item Kleine Schauerbilder
+        \item Nicht simulierte Rauschereignisse
+        \item Bereiche mit großen Sim./Obs.-Unterschieden
+        \item Unvollständige Schauerbilder
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[c]{aict-tools}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.65\textwidth}
+      {\large\bfseries Zielgrößen}
+      \begin{description}[Teilchenklasse]
+        \item[Energie] 1D-Regression
+        \item[Teilchenklasse] Binäre Klassifikation
+        \item[Herkunft] 2D-Regression
+      \end{description}
+
+      \begin{center}
+        \includegraphics[height=0.2\textheight]{images/scikit-learn.pdf}\hspace{2em}%
+        \includegraphics[height=0.2\textheight]{images/pandas.pdf}\\[0.5\baselineskip]
+        \includegraphics[height=0.2\textheight]{images/astropy.pdf}
+      \end{center}
+    \end{column}
+    \hfill
+    \begin{column}{0.3\textwidth}
+      \includegraphics[width=\linewidth]{images/magic.jpg}\\[0.5\baselineskip]
+      \includegraphics[width=\linewidth]{images/lst.jpg}\\[-1.5\baselineskip]
+      \textcolor{white}{\hspace{0.5em}\small [Otger Ballester (IFAE)]}%
+    \end{column}
+  \end{columns}
+
+  \vspace{0.5\baselineskip}
+  \begin{center}
+    \small\fullcite{aict-tools}
+  \end{center}
+\end{frame}
+
+\begin{frame}[c]{Quellabhängige vs. quellunabhängige Analyse}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.475\textwidth}
+      Bisher: Analyse nutzt Attribute unter Annahme bekannter Quellposition
+      \begin{itemize}
+        \item[$\Rightarrow$] Keine allgemeine Vorhersage der Gamma-Richtung
+        \item[$\Rightarrow$] Komplexere Untergrundabschätzung
+        \item[$\Rightarrow$] Ungeeignet für Beobachtung von Neutrino/GRB Alarmen mit unsicherer Herkunft
+      \end{itemize}
+      \vspace{-1\baselineskip}
+      \begin{center}
+        \begin{tikzpicture}
+          \node[anchor=north east] at (0, 0) {%
+            \includegraphics[width=\linewidth]{images/icecube.jpg}
+          };
+          \node[anchor=north east, align=right] at (-0.5em, -0.5em) {
+            \small [IceCube Kollaboration/NSF]%
+          };
+        \end{tikzpicture}
+      \end{center}
+    \end{column}
+    \hfill
+    \begin{column}{0.475\textwidth}
+      \includegraphics[width=\linewidth]{build/hillas_theta.pdf}%
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\bumper{Ergebnisse auf simulierten Ereignissen}
+
+\begin{frame}[c]{Energieschätzung}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.625\textwidth}%
+      \parbox[c][0.9\textheight][c]{\linewidth}{%
+        \centering%
+        \only<1-2>{\includegraphics[height=0.9\textheight, keepaspectratio, width=\linewidth]{../thesis/build/plots/energy_migration_apa85.pdf}}%
+        \only<2>{%
+          \begin{tikzpicture}[overlay, remember picture, shift=(current page.center)]
+            \fill[white, opacity=0.7] (-3, -3.2) rectangle (-2.7, 2.8);
+            \fill[tugreen, opacity=0.5] (-3, -0.8) rectangle (-2.7, 0.2);
+            \draw[line width=1pt, tugreen] (-3, -0.3) -- (-2.7, -0.3);
+          \end{tikzpicture}
+        }%
+        \only<3>{\includegraphics[width=\linewidth]{../thesis/build/plots/bias_resolution_apa85.pdf}}%
+    }
+    \end{column}%
+    \hfill
+    \begin{column}{0.35\textwidth}
+      \begin{itemize}
+        \item Random Forest Regression
+        \item Trainiert auf punkt. Gammas
+        \item Modell schätzt $\log_{10}(E)$
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[c]{Signal-Untergrund-Trennung}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.35\textwidth}
+      \begin{itemize}
+        \item Random Forest Klassifikation
+        \item Diffuse Gammas | Protonen
+        \item $\mathtt{gamma\_prediction} \in [0, 1]$
+        \item Schwellwert $\Rightarrow$ Signal/Untergrund
+      \end{itemize}
+    \end{column}
+    \hfill
+    \begin{column}{0.625\textwidth}%
+      \parbox[c][0.9\textheight][c]{\linewidth}{%
+        \centering%
+        \only<1>{\includegraphics[height=0.9\textheight, keepaspectratio, width=\linewidth]{build/roc.pdf}}%
+        \only<2>{\includegraphics[width=\linewidth]{../thesis/build/plots/roc_vs_energy_apa85.pdf}}%
+      }%
+    \end{column}%
+  \end{columns}
+\end{frame}
+
+\begin{frame}[c]{Richtungsrekonstruktion}
+  \begin{columns}[onlytextwidth, c]
+    \begin{column}{0.475\textwidth}
+      \begin{description}
+        \item[Annahme] Quellposition auf rek. Hauptachse
+        \item[$⇒$] Reduktion von 2D-Regression auf 1D-Regression + bin. Klassifizierung
+        \item[Bisher]
+          \begin{align*}
+            |\mathtt{disp}| &= \zeta \left(1 - \frac{\mathtt{width}}{\mathtt{length}}\right) \\
+          \end{align*}
+        \item[aict-tools] je ein Random Forest für Regression und Klassifikation
+      \end{description}
+    \end{column}
+    \begin{column}{0.475\textwidth}%
+      \only<1>{\parbox[c][0.9\textheight][c]{\linewidth}{%
+        \includegraphics[width=\linewidth]{build/hillas_disp_1.pdf}}%
+      }%
+      \only<2>{\parbox[c][0.9\textheight][c]{\linewidth}{%
+        \includegraphics[width=\linewidth]{build/hillas_disp_2.pdf}}%
+      }%
+      % \only<3>{\parbox[c][0.9\textheight][c]{\linewidth}{%
+      %   \includegraphics[width=\linewidth]{build/hillas_skewness.pdf}}%
+      % }%
+    \end{column}%
+  \end{columns}
+\end{frame}
+
+% \begin{frame}[t]{Richtungsrekonstruktion}
+%   \centering
+%   \includegraphics[height=0.9\textheight]{../thesis/build/plots/disp_metrics_apa85.pdf}
+% \end{frame}
+
+\begin{frame}[t]{Richtungsrekonstruktion}
+  \centering
+  \includegraphics[height=0.9\textheight]{../thesis/build/plots/compare_old_disp_only_correct.pdf}
+\end{frame}
+
+\bumper{Ergebnisse auf Krebsnebel-Observationen}
+
+\begin{frame}[c]{Himmelskarte}
+  \begin{center}%
+    \only<1>{\includegraphics[height=0.9\textheight]{build/skymap.pdf}}%
+    \only<2>{\includegraphics[height=0.9\textheight]{build/skymap_positions.pdf}}%
+  \end{center}%
+\end{frame}
+
+\begin{frame}[c]
+  \begin{columns}[c, onlytextwidth]
+    \begin{column}{0.65\textwidth}
+      \includegraphics[width=\linewidth]{../thesis/build/plots/theta2_apa85.pdf}%
+    \end{column}
+    \hfill%
+    \begin{column}{0.3\textwidth}
+      \large\bfseries Detektions-Signifikanz:
+      \begin{tabular}{r S[table-format=2.1] @{\,} l}
+        \bfseries\color{tugreen} Vorgänger-Analyse & 39.9 & $\sigma$ \\
+        \bfseries\color{tugreen} ICRC 2017         & 43.3 & $\sigma$ \\
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[c]{Sensitivität}
+  \begin{columns}[c, onlytextwidth]
+    \begin{column}{0.6\textwidth}
+      \includegraphics[width=\linewidth]{../thesis/build/plots/sensitivity_apa85.pdf}
+    \end{column}
+    \hfill%
+    \begin{column}{0.35\textwidth}
+      \large\bfseries Integrale Sensitivität:
+      \begin{tabular}{r S[table-format=2.1] @{\,} l}
+        \bfseries\color{tugreen} Vorgänger-Analyse & 15.2 & $\%$ \\
+        \bfseries\color{tugreen} ICRC 2017         & 13.7 & $\%$ \\
+        \bfseries\color{tugreen} Diese Analyse     &  8.5 & $\%$ \\
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}[t]{Spektrum des Krebsnebels}
+  \centering
+  \includegraphics[height=0.9\textheight]{build/spectrum.pdf}
+\end{frame}
+
+\begin{frame}[t]{Erste gemeinsame Analyse von vier IACTs}
+  \begin{center}%
+    \includegraphics[height=0.7\textheight]{images/crab_sed_fit.pdf}%
+  \end{center}%
+  \fullcite{open-crab}
+\end{frame}
+
+\begin{frame}[b]{Zusammenfassung}
+  \begin{itemize}
+    \item Verbesserungen an allen Teilen der Analyse
+    \item Entwicklung einer quellunabhängigen Analyse
+    \item Stark verbesserte Richtungsauflösung
+    \item Deutlich bessere integrale Sensitivität
+    \item Fokus auf offene, automatisierte, reproduzierbare Software
+    \item Teil der ersten gemeinsamen Veröffentlichung der 4 operierenden IACTs
+    \item Anwendung der entwickelten Methoden in der Analyse von CTA Daten
+  \end{itemize}
+
+  \begin{tikzpicture}[remember picture, overlay, shift=(current page.center)]
+    \node at (4, 0) {\includegraphics[height=0.6\textheight]{../thesis/build/plots/sensitivity_apa85.pdf}};%
+    \node at (-2, 1.4) {\includegraphics[height=0.5\textheight]{build/skymap.pdf}};
+  \end{tikzpicture}
+\end{frame}
+
+
+\begin{frame}[t]{Aus dem Ausblick}
+  \begin{itemize}
+    \item Transfer des Gelernten auf die neue Teleskopgeneration
+    \item Erste Ergebnisse mit dem LST-Prototypen
+  \end{itemize}
+  \includegraphics[height=0.5\textheight]{images/lst.jpg}\hfill\includegraphics[height=0.65\textheight]{images/theta2_lst.pdf}%
+\end{frame}
+
+\bumper{Backup}
+
+\begin{frame}[c]{TeV Sources}
+  \centering
+  \includegraphics[height=0.9\textheight]{./build/tevcat.pdf}
+\end{frame}
+
+
+\begin{frame}[c]{Gesamt-Tscherenkow-Licht}%
+  \includegraphics[width=0.3333\linewidth]{../thesis/build/plots/gamma_footprint.pdf}%
+  \includegraphics[width=0.3333\linewidth]{../thesis/build/plots/proton_footprint.pdf}%
+  \includegraphics[width=0.3333\linewidth]{../thesis/build/plots/iron_footprint.pdf}%
+\end{frame}%
+
+
+\begin{frame}[c]{SED des Krebsnebels}
+  \centering
+  \resizebox{!}{.9\textheight}{
+    \input{../thesis/build/plots/crab_sed.pgf}
+  }
+\end{frame}
+
+\begin{frame}[t]{Proton \& Helium Fluss}
+  \centering
+  \includegraphics[width=\linewidth, height=0.95\textheight, keepaspectratio]{../thesis/build/plots/proton_helium_spectrum.pdf}
+\end{frame}
+
+
+\begin{frame}{Protonen \& Helium}
+  \includegraphics[page=6, width=\linewidth, height=0.95\textheight, keepaspectratio]{../thesis/build/plots/data_mc_comparison.pdf}
+\end{frame}
+
+\begin{frame}{Protonen \& Helium size > 500}
+  \only<1>{\includegraphics[page=4, width=\linewidth, height=0.95\textheight, keepaspectratio]{../thesis/build/plots/data_mc_comparison_size_gt_500.pdf}}%
+  \only<2>{\includegraphics[page=1, width=\linewidth, height=0.95\textheight, keepaspectratio]{../thesis/build/plots/data_mc_comparison_size_gt_500.pdf}}%
+\end{frame}
+
+\begin{frame}[c]{Verschiedene Photoneffizienzen}
+  \includegraphics[page=6, width=\linewidth, height=0.95\textheight, keepaspectratio]{../thesis/build/plots/data_mc_comparison_all.pdf}
+\end{frame}
+
+\begin{frame}[c]{Optimierung der Selektion}
+  \centering
+  \includegraphics[height=0.9\textheight]{../thesis/build/plots/significances_apa85.pdf}%
+\end{frame}
+
+\begin{frame}[c]{Effektive Fläche}
+  \centering
+  \includegraphics[height=0.9\textheight]{../thesis/build/plots/effective_area_apa85.pdf}
+\end{frame}
+
+\begin{frame}[c]{Effektive Fläche}
+  \centering
+  \includegraphics[height=0.9\textheight]{../thesis/build/plots/effective_area_apa85_bg.pdf}
+\end{frame}
+
+
+\begin{frame}[c]{Anzahl Photon gegen Energie}
+  \centering
+  \includegraphics[height=0.9\textheight]{../thesis/build/plots/size_vs_true_energy.pdf}
+\end{frame}
+
+
+\begin{frame}[c]{Shifthelper}
+  \centering
+  \begin{tikzpicture}
+    \input{../thesis/images/shifthelper.tex}
+  \end{tikzpicture}
+\end{frame}
+
+\end{document}

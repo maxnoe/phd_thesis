@@ -1,0 +1,152 @@
+seed: 0
+
+n_cross_validations: 5
+
+energy:
+  regressor: |
+    ensemble.RandomForestRegressor(
+      n_estimators=200,
+      max_features=5,
+      min_samples_split=3,
+      n_jobs=-1,
+      criterion='mse',
+      max_depth=15,
+      random_state=0,
+    )
+  
+  n_signal: 200000
+  
+  log_target: True
+  target_name: corsika_event_header_total_energy
+  
+  features:
+    - size
+    - width
+    - length
+    - skewness_trans
+    - skewness_long
+    - concentration_cog
+    - concentration_core
+    - concentration_one_pixel
+    - concentration_two_pixel
+    - leakage1
+    - leakage2
+    - num_islands
+    - num_pixel_in_shower
+    - photoncharge_shower_mean
+    - photoncharge_shower_variance
+    - photoncharge_shower_max
+  
+  
+  # feature generation, constants have to be prefixed with @
+  feature_generation:
+    needed_columns:
+      - size
+      - width
+      - length
+      - cog_x
+      - cog_y
+    features:
+      log_size: log(size)
+      size_area: size / (width * length * @pi)
+      area: (width * length * @pi)
+      cog_r: sqrt(cog_x**2 + cog_y**2)
+  
+
+
+separator:
+  # the classifier to use
+  classifier : |
+    ensemble.RandomForestClassifier(
+        n_estimators=200,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=25,
+        criterion='entropy',
+    )
+  
+  
+  # randomly sample the data if you dont want to use the whole set
+  n_background: 100000
+  n_signal: 100000
+  
+  
+  features:
+   - concentration_cog
+   - concentration_core
+   - concentration_one_pixel
+   - concentration_two_pixel
+   - leakage1
+   - leakage2
+   - width
+   - length
+   - skewness_long
+   - skewness_trans
+   - kurtosis_long
+   - kurtosis_trans
+   - num_islands
+   - num_pixel_in_shower
+   - photoncharge_shower_variance
+  
+  # feature generation, constants have to be prefixed with @
+  feature_generation:
+    needed_columns:
+      - width
+      - length
+      - size
+    features:
+      area: width * length * @pi
+      log_size: log(size)
+      size_area: size / (width * length * @pi)
+      area_size_cut_var: (width * length * @pi) / log(size)**2
+
+disp:
+  disp_regressor : |
+    ensemble.RandomForestRegressor(
+        n_estimators=200,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  sign_classifier: |
+    ensemble.RandomForestClassifier(
+        n_estimators=200,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=25,
+    )
+
+  source_az_column: source_position_az
+  source_zd_column: source_position_zd
+  pointing_az_column: pointing_position_az
+  pointing_zd_column: pointing_position_zd
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal : 200000
+
+  features:
+    - num_pixel_in_shower
+    - width
+    - length
+    - skewness_long
+    - kurtosis_long
+    - concentration_cog
+    - concentration_core
+    - leakage1
+    - leakage2
+    - slope_long
+    - time_gradient_slope_long
+    - photoncharge_shower_mean
+    - photoncharge_shower_variance
+
+  feature_generation:
+    needed_columns:
+      - width
+      - length
+      - size
+    features:
+      area: width * length * @pi
+      width_length: 1 - (width / length)
+      log_size: log(size)
+      log_size_area: log(size) / (width * length * @pi)

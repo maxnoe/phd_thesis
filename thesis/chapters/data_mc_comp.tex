@@ -1,0 +1,145 @@
+\subsection{Comparison of Observations and Simulations}
+
+\begin{figure}
+  \centering
+  \includegraphics[page=6]{build/plots/data_mc_comparison.pdf}
+  \caption{%
+    Image parameter \param{size} for the three different datasets normalized to
+    the expected event rate for one hour of observation time.
+    The simulated datasets with $\param{APA} = \SI{85}{\percent}$  are used here.
+  }\label{fig:data-mc-size}
+\end{figure}
+
+
+\noindent The Achilles heel of any analysis depending on simulated data is
+how well the simulation describes reality.
+In this section, observed and simulated image parameter distributions are compared.
+Optimizing the simulation configuration is a slow and computationally expensive 
+task.
+Root causes of disagreements between observed and simulated data are rarely obvious
+and recomputing the simulations takes considerable time.
+
+\begin{figure}
+  \centering
+  \includegraphics[page=4]{build/plots/data_mc_comparison.pdf}
+  \caption{%
+    Image parameter \param{length} for the three different datasets normalized to
+    the expected event rate for one hour of observation time.
+  }\label{fig:data-mc-length}
+\end{figure}
+
+Before, only protons had been simulated for \gls{fact} and been
+reweighted to \eqref{eq:all-particle}, basically making the assumption
+that all charged cosmic rays are protons, e.\,g.\ in \cite{phd-temme}.
+
+
+\begin{figure}
+  \centering
+  \includegraphics[page=1]{build/plots/data_mc_comparison.pdf}
+  \caption{%
+    Image parameter \param{concentration\_cog} for the three different datasets normalized to
+    the expected event rate for one hour of observation time.
+  }\label{fig:data-mc-conccog}
+\end{figure}
+In \autoref{fig:data-mc-size}, the distributions of the \param{size} parameter,
+the total number of reconstructed Cherenkov photons in the cleaned image, is shown
+for three datasets:
+\begin{enumerate}[nosep]
+  \item The observed Crab Nebula observations
+  \item Simulated protons using $\param{APA} = \SI{85}{\percent}$ weighted to the all particle spectrum \eqref{eq:all-particle}.
+  \item Simulated protons and helium using $\param{APA} = \SI{85}{\percent}$  weighted to their respective individual spectra
+    according to \eqref{eq:proton-flux} and \eqref{eq:helium-flux} as shown in \autoref{fig:cr-flux}.
+\end{enumerate}
+As can be seen, the effect of the composition of cosmic rays is not negligible.
+For larger values of \param{size} the agreement between observations and the combined
+proton and helium flux is much better than under the only protons assumption.
+There are however considerably more events in both simulated distributions at smaller values
+of \param{size} compared to the observations.
+Mismatches are also observed in the other image parameters, e.\,g.\ \param{length} (\autoref{fig:data-mc-length}) or \param{concentration\_cog} (\autoref{fig:data-mc-conccog}).
+
+\begin{figure}
+  \centering
+  \includegraphics[page=4]{build/plots/data_mc_comparison_size_gt_500.pdf}
+  \caption{%
+    Image parameter \param{length} for the three different datasets normalized to
+    the expected event rate for one hour of observation time. 
+    Only events with $\param{size} ≥ 500$ are shown.
+  }\label{fig:data-mc-large-size-length}
+\end{figure}
+
+To check whether the mismatches in the other image parameters are correlated to the  
+mismatches observed in \param{size},
+\autoref{fig:data-mc-large-size-length}, \autoref{fig:data-mc-large-size-conccog} and \autoref{fig:data-mc-large-size-leakage1}
+show the image parameters \param{length}, \param{concentration\_cog} and \param{leakage1} only for events with $\param{size} ≥ 500$.
+The agreement is much better for these bright events, hinting that the mismatches
+mostly affect the lower energy part.
+This can have multiple causes, dimmer events have a lower signal to noise ratio,
+resulting in not properly simulated noise affecting these events more strongly.
+Noise is simulated under the simple assumption of a single white noise component in \ceres{}, 
+compare \autoref{sec:ceres}.
+An approach to mitigate the simple noise model in \ceres{} is to use measured
+noise and superimpose it to simulated shower images without noise to get
+a more realistic noise for simulated events. 
+A first implementation of this is described in \cite{master-bulinski} and
+is currently being evaluated for \gls{fact} simulations in \cite{phd-buss}.
+
+
+\begin{figure}
+  \centering
+  \includegraphics[page=1]{build/plots/data_mc_comparison_size_gt_500.pdf}
+  \caption{%
+    Image parameter \param{concentration\_cog} for the three different datasets normalized to
+    the expected event rate for one hour of observation time. 
+    Only events with $\param{size} ≥ 500$ are shown.
+  }\label{fig:data-mc-large-size-conccog}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[page=3]{build/plots/data_mc_comparison_size_gt_500.pdf}
+  \caption{%
+    Image parameter \param{leakage1} for the three different datasets normalized to
+    the expected event rate for one hour of observation time. 
+    Only events with $\param{size} ≥ 500$ are shown.
+  }\label{fig:data-mc-large-size-leakage1}
+\end{figure}
+
+
+Figure \autoref{fig:data-mc-size-all} shows the image parameter \param{size} for
+all three simulated settings of the additional photon acceptance.
+As expected, with more light in the events, more events are triggering and 
+overall higher event rates are observed, especially at lower values of \param{size}.
+
+\begin{figure}
+  \centering
+  \includegraphics[page=6]{build/plots/data_mc_comparison_all.pdf}
+  \caption{%
+    Image parameter \param{size} for the Crab Nebula observations and
+    combined proton and helium flux for all three simulated values of \param{APA}.
+  }\label{fig:data-mc-size-all}
+\end{figure}
+
+
+Finally, \autoref{fig:data-gamma-size} shows a comparison between signal candidates
+on the observed Crab Nebula data and simulated gammas for the dataset with $\param{APA} = \SI{85}{\percent}$.
+This is achieved by applying very loose event selection criteria ($\param{gamma\_prediction} ≥ \num{0.5}$ and $θ^2 ≤ \SI{0.1}{{deg}\squared})$ and subtracting the distribution
+for the off regions from the distribution in the on region, leaving only the excess events.
+The same distributions for the other settings of \param{APA} are shown in Appendix~\ref{apx:gamma-size}.
+Also these figures lead to the conclusion that of the three simulated datasets,
+$\param{APA} = \SI{85}{\percent}$ has the best agreement with the observed data,
+at least in the higher energy range.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/data_gamma_comp_apa85.pdf}
+  \caption{%
+    Image parameter \param{size} for simulated gammas and the observed excess events
+    in the on region for loose event selection criteria.
+    The simulated datasets with $\param{APA} = \SI{85}{\percent}$  are used here.
+  }\label{fig:data-gamma-size}
+\end{figure}
+
+These comparisons show, that work is still required, especially for the lower
+energy events, to get to full agreement between observed and measured distributions.
+Through the addition of helium overall agreement has been greatly improved, allowing
+more dedicated searches for the causes of the remaining disagreements in the future.

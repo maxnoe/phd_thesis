@@ -1,0 +1,314 @@
+\chapter{Monte Carlo Simulation of FACT Events}\label{chp:simulation}
+
+To evaluate the performance of an instrument design before it is build
+or to generate labeled data for the training of statistical models,
+the possibility of simulating the data of instruments is of crucial importance.
+As there are no artificial sources of gamma rays and cosmic rays at the energies
+measured by \glspl{iact}, extensive simulations are
+necessary to be able to reconstruct the events observed with these telescopes.
+
+Simulation of events for \glspl{iact} is usually done in two steps:
+First, the \gls{eas} is simulated which produces the Cherenkov light
+on the ground level at the telescope as output.
+Second, from the simulated Cherenkov photons, the detector response
+of the instrument is calculated.
+
+Due to the stochastic nature of the involved processes, the Monte Carlo
+method is the perfect fit to generate artificial \gls{iact} events with known
+initial conditions.
+Very few initial parameters result in an incalculable large number of possible outcomes.
+Simulating a single air shower requires drawing several million pseudo random numbers.
+
+For small instruments like \gls{fact}, the simulation of the \gls{eas} is
+usually much more computationally intensive than the simulation of the detector response.
+
+\section{Simulation of Air Showers Using CORSIKA}\label{sec:corsika}
+
+The development of \gls{corsika}~\cite{corsika} initially began in the late 1980s by merging
+three precursor code bases into a single software to simulate \gls{eas} for
+the KASCADE~\cite{kascade} cosmic ray experiment.
+It was later extended to also be able to calculate Cherenkov light production,
+currently with the \texttt{iact/atmo} extension \cite{iactatmo}.
+
+\gls{corsika} simulates all particle interactions from the moment
+a particle enters Earth's atmosphere.
+This requires knowledge of the cross-sections for all possible processes,
+especially for very high energy interactions in forward direction and for
+air molecules.
+These regimes are generally not accessible by collider experiments and
+are thus extrapolated from the available data at lower energies, larger
+scattering angles and other nuclei~\cite{epos-lhc}.
+Improvements to the cross-section calculations after new experimental data
+is published is one of the main improvements between \gls{corsika} versions.
+
+To produce simulations with \gls{corsika}, a large number of configuration options
+have to be considered, both at compile and run time.
+These need to be adapted for the specific experiments and several libraries
+can be chosen for the calculation of the particle interactions.
+
+\gls{corsika} is written in \texttt{FORTRAN 77},
+while the \texttt{iact/atmo} extension is written in \texttt{C}.
+Unfortunately, \gls{corsika} is not Free and Open Source Software.
+However, access is usually granted for anyone interested in using the software.
+There is an ongoing effort to create the next major version of \gls{corsika} 
+using more modern technologies in a complete redesign,
+openly developed by the community and published under an open source license.
+However, this is not yet finished as of early 2020~\cite{corsika8}.
+
+In this work, new simulations were produced using \gls{corsika}, version \texttt{7.69} released in December 2018 of \gls{corsika}.
+These are compared to simulations that were previously created 
+by the \gls{fact}-Collaboration
+using a customized version of \gls{corsika} called \gls{mmcs}, which
+was based on version \texttt{6.5} \cite{mmcs}, released in 2006.
+
+\subsection{Interaction Models}\label{sec:models}
+
+The particle interaction cross sections are not calculated by \gls{corsika} itself
+but by externally contributed libraries.
+When simulating Cherenkov light, 
+the electromagnetic interactions are simulated using \gls{egs4}~\cite{egs4}.
+
+For the hadronic interactions, several libraries are available for use
+with \gls{corsika}.
+As these libraries have their own energy domains, \gls{corsika} splits 
+calculations into two energy regimes each handled by a different library with
+a hard transition at \SI{80}{\GeV}~\cite{corsika_manual_769}.
+Choosing the libraries for the different cross section calculations is a compile time option.
+
+There are three possible choices for the hadronic interactions below an energy of
+\SI{80}{\GeV} in \gls{corsika} 
+for both versions \texttt{7.69} and \texttt{6.5}: \gls{gheisha}, \gls{fluka} and \gls{urqmd}~\cite{corsika_manual_769}.
+According to a comparison of the three models in \cite{model_comp_auger}, \gls{gheisha} fails to reproduce measured data when used with \gls{corsika} to simulate air showers.
+It was thus not considered for the simulation of \gls{fact} events.
+\gls{fluka}~\cite{fluka} is only provided as compiled binary to registered users with a very restrictive
+license~\cite{fluka-license}.
+These binaries even have a \enquote{shelf life} date compiled into them,
+after which the software will stop to work.
+As this is all but prohibiting the reproducibility of the simulations, 
+\gls{fluka} should not be used for a new set of simulations.
+However, for a long time it was considered to be the best model~\cite{model_comp_auger} and it was used
+to produce the simulations with \gls{mmcs} \texttt{6.5}.
+\gls{urqmd}~\cite{urqmd}, the third option, will be explored as an alternative to 
+\gls{fluka}.
+
+The possible choices for the hadronic interaction models above \SI{80}{\GeV} are more numerous,
+with some of the options being combinations of the other models.
+The \gls{mmcs} \texttt{6.5} production used \gls{qgsjet}.
+With the advent of \gls{LHC} measurements, many libraries were updated to reproduce the 
+now available data at higher energies and for lead collisions~\cite{epos-lhc}. 
+Together with the \texttt{iact/atmo} extension discussed in the next section,
+these are the major changes from using \gls{mmcs} \texttt{6.5} to \gls{corsika} \texttt{7.69}.
+The most advanced model is currently \texttt{EPOS-LHC}~\cite{epos-lhc}, which combines the older
+\texttt{VENUS} and \gls{qgsjet} models with better extrapolation and \gls{LHC} data.
+
+
+\subsection{Cherenkov Light Production}\label{sec:corsika-cherenkov}
+
+Any charged particle traveling faster than the local speed of light induces
+emission of Cherenkov light.
+\gls{corsika} divides the tracks of particles into steps between interactions,
+decays or the deflection in Earth's magnetic field.
+These track parts along with start and end energy of the particle are
+handed over to the subroutines calculating the Cherenkov emission.
+
+A first version of the Cherenkov production code, used by the \gls{mmcs} \texttt{6.5}
+production, was developed for non-imaging detectors of the \gls{hegra} array and proofed
+to be not ideal for \glspl{iact}.
+The later developed \texttt{iact/atmo} extension improves several aspects:
+photons are collected in spheres encompassing the telescopes instead of
+rectangles on the ground,
+better description of the atmosphere by using fine-grained, tabulated values
+for density and refractive index and taking atmospheric refraction of the Cherenkov
+photons into account~\cite{iactatmo}.
+Due to these improvements, the \texttt{iact/atmo} extension will be used for the
+new simulations using \gls{corsika} \texttt{7.69}.
+The \texttt{iact/atmo} extension writes its output in the \texttt{eventio} format~\cite{eventio},
+a generic container format for binary payloads,
+which are defined by the applications writing and reading the data.
+Two different formats exist for the Cherenkov payload,
+a smaller representation called \enquote{compact} 
+with limited precision using 16-bit integers to store scaled quantities and a larger
+storing 32-bit floating point values.
+
+Both the \texttt{iact/atmo} extension and \gls{mmcs} offer the possibility
+to \emph{reuse} a shower.
+Meaning that the same telescope is randomly placed at different 
+positions in the Cherenkov light pool of a shower,
+effectively creating multiple events from the same air shower.
+This results in a very direct speed up of simulations and since
+most of the simulated showers will not trigger the telescope or survive
+the event selection in the analysis, it is quite rare that the same shower 
+is used multiple times in the end, which could introduce a statistical
+bias as events would not be independent anymore.
+Because computation time and small event numbers are mainly a problem of 
+hadronic simulations, a reuse of 20 is only used for these showers and not for photon primaries.
+Another option of improving simulation performance is treating several photons
+as a single ray with a weight corresponding to the number of photons.
+This is called bunching and is a compromise between accuracy of the spatial 
+distribution and computing time.
+
+Because \gls{fact}'s photo detectors are sensitive to larger wavelengths then
+classical \glspl{pmt}, Cherenkov photons are simulated in wavelengths from \SIrange{290}{900}{\nano\meter}.  
+
+\subsection{Particle Properties and Other Configuration Options}
+All runtime options for an individual corsika run, meaning a single execution of
+the program simulating a fixed number of showers, are configured in a 
+plain text file called the input card.
+This includes properties of the primary particles, 
+description of the telescopes, seeds for the random generator to ensure
+reproducibility, the local magnetic field, the atmosphere and many more.
+
+The initial parameters of any particle in the simulation are
+\begin{itemize}[nosep]
+  \item Particle type
+  \item Energy
+  \item Direction
+  \item Position, expressed as the impact point on the ground for primaries.
+\end{itemize}
+At the beginning of each new simulation event, these properties are either
+fixed or drawn randomly from the corresponding distributions.
+In the simulations done for \gls{fact}, the particle type
+is always kept fixed, either gamma rays, protons or helium nuclei are simulated.
+The energies of the simulated events are drawn from a power law distribution with
+spectral index $\gamma$ between a minimum ($\Emin$) and a maximum energy ($\Emax$).
+The distance to the telescope $R$, also known as the impact parameter,
+is drawn so that the events are inside a circle of radius $R_{\max}$ and uniform in area.
+The direction is sampled uniformly in the azimuth angle $φ$ between $φ_{\min}$ and
+$φ_{\max}$
+and the zenith angle $ϑ$ is sampled to be uniform in solid angle between $ϑ_{\min}$
+and $ϑ_{\max}$.
+The corresponding probability density functions are given in Appendix~\ref{apx:corsika-pdfs}.
+
+\section{Simulation of Detector Response using CERES}\label{sec:ceres}
+
+The detector simulation of \gls{fact} is done using \ceres{}~\cite{ceres}, an executable
+using \gls{fact}'s version of the \gls{mars}\footnote{While sharing a common history, developement of \gls{fact}'s and \gls{magic}'s version of the software split before \gls{fact} started operation in 2009. \gls{magic}'s version is not public.} framework to simulate the detector response
+given Cherenkov photons on the ground as input.
+\ceres{} supports both the classical \gls{corsika} binary output format and the \texttt{eventio}
+output format produced by the \texttt{iact/atmo} extension as discussed in the \hyperref[sec:corsika]{previous section}. 
+Reading of \texttt{eventio} however is rudimentary and does not support all features
+of \gls{corsika}, e.\,g.\ only a bunchsize of 1 and the compact format of the \gls{corsika}
+output are supported.
+As with \gls{corsika}, \ceres{} has a multitude of configuration options,
+describing the telescope, the pointing position relative to the shower axis and the environmental conditions.
+
+The first step in the simulation in \ceres{} is the application of several absorption
+processes, reducing the amount of photons the simulation needs to process.
+As each photon that finally might be detected in one of the telescope's pixels 
+goes through the same processes that might absorb the photon, all of these
+processes can be combined into an overall detection efficiency, greatly reducing 
+computational cost through applying this absorption as early as possible.
+These absorptions include atmospheric scattering, reflectivity of the mirrors,
+transmittance of the entrance window of the camera and the Winston cones and
+the photon detection efficiency of the \glspl{sipm}.
+All these efficiencies are tabulated vs.\ wavelength in files as input to the simulation.
+For the simulations produced for \cite{phd-temme}, an additional absorption without
+direct physical cause further reducing the number of photons was introduced.
+This is used to model all neglected sources of photon loss, like shadowing effects
+of the mast structure holding the camera.
+
+After discarding photons according to the overall absorption,
+simplified ray tracing is done to simulate the optical system,
+calculating which pixel if any is hit by the photon.
+The segmented mirror is defined in a configuration file,
+providing shape, size, focal length, position and orientation of each facet.
+
+The signal of the \glspl{sipm} is calculated by superimposing the pulse shape
+of a single photon for each individual photon, also adding additional photons
+for the \gls{nsb}, dark counts and cross talk.
+The pulse shape can either be defined using tabulated values in a text file
+or an analytical function.
+An additionial electronic noise, only simulated as simple white noise is added to the resulting signal.
+
+Several options to further add artifacts to the simulated timeseries 
+were implemented for the simulations produced for \cite{phd-temme}.
+It was observed that the temporal features are not well-described, 
+especially the variance of photon arrival times was much smaller for simulated
+events than observed on measured data.
+Three different approaches were introduced to tackle this problem:
+a fixed time offset for each pixel, so that the signals would go out of sync,
+a random offset between pixels for each event and smearing the arrival times
+of each individual photon by a normally distributed random number.
+
+The signal is then used to simulate the trigger decision and if any trigger
+is raised, the event is stored to disk.
+\ceres{} supports both \texttt{ROOT} output as well as the \gls{fits} format,
+which produces files very similar to the ones the actual telescope data acquisition
+writes.
+
+The \gls{mars}/\ceres{} version used for the simulations done in this work is revision 19561
+in \gls{fact}'s subversion repository~\cite{fact-svn}.
+
+
+\section{Reweighting Simulated Events to Physical Fluxes}
+
+To compare observed event distributions to simulated ones,
+to calculate sensitivities for a given gamma-ray source or
+to fit flux models to observed events, a simulated
+event distribution needs to be reweighted to represent a physical flux.
+
+The first step is to calculate the flux normalization of the simulated events $\Phi_\text{sim}$
+for a given observation time \tobs.
+The number of simulated events $N$ is the integral of the differential flux:
+\begin{align}
+  N &= \int_{\Emin}^{\Emax} \int_0^{\tobs} \int_Ω \int_A \Phi_{\text{sim}} \left(\frac{E}{\Eref}\right)^γ 
+    = \frac{\Phi_\text{sim}\tobs Ω A}{\Eref[γ] \, (γ + 1)} \left(\Emax[γ + 1] - \Emin[γ + 1]\right) .\\
+    \intertext{Solving for $\Phi_\text{sim}$ yields}
+  \iff  \Phi_\text{sim} &= \frac{\Eref[γ] \, (γ + 1) N}{\tobs Ω A \left(\Emax[γ + 1] - \Emin[γ + 1]\right)}
+\end{align}
+Where $A = 2 \PI \Rmax[2]$ and $Ω$ is the solid angle, which is given by
+\begin{equation}
+  Ω = 2 \PI (1 - \cos{\theta_{\max}}) \, \si{\steradian}
+\end{equation}
+if the events were simulated using a viewcone and $Ω = 1$ if a point-like source
+was simulated.
+
+The sample weights for each simulated event are now calculated as the ratio 
+of the target energy spectrum and simulated energy spectrum
+\begin{equation}
+  w_i = \frac{\Phi_\text{target}(E_i)}{\Phi_\text{sim}(E_i)} \label{eq:weights}
+\end{equation}
+
+
+\input{chapters/mopro.tex}
+
+
+\section{Comparison of FLUKA and URQMD}
+
+\begin{figure}
+  \centering
+  \begin{subfigure}{0.5\textwidth}%
+    \includegraphics[page=1, width=\linewidth]{build/plots/fluka_urqmd_comparison.pdf}%
+  \end{subfigure}%
+  \begin{subfigure}{0.5\textwidth}%
+    \includegraphics[page=2, width=\linewidth]{build/plots/fluka_urqmd_comparison.pdf}%
+  \end{subfigure}\\
+  \begin{subfigure}{0.5\textwidth}%
+    \includegraphics[page=3, width=\linewidth]{build/plots/fluka_urqmd_comparison.pdf}%
+  \end{subfigure}%
+  \begin{subfigure}{0.5\textwidth}%
+    \includegraphics[page=4, width=\linewidth]{build/plots/fluka_urqmd_comparison.pdf}%
+  \end{subfigure}%
+  \caption{%
+    Image parameters \param{concentration\_cog}, \param{length}, \param{size} and \param{width}  for
+    the three different simulation data sets. 
+    The differences between \gls{urqmd} and \gls{fluka} are negligible while
+    there is a slight difference between the two and the older simulation settings,
+    e.\,g.\ for large values of \param{size} and small values of \param{concentration\_cog}.
+  }\label{fig:fluka_urqmd}
+\end{figure}
+
+As described in section \ref{sec:models}, there are two options to consider for the
+low energy hadronic interaction model.
+To compare the two, a smaller test data set using protons as primary particle was produced for each \gls{fluka} and \gls{urqmd}. 
+
+The full simulation and analysis chain up to the image parameters as described in
+\autoref{chp:preprocessing} was executed.
+\autoref{fig:fluka_urqmd} shows the distributions of several image parameters
+for the two new simulation sets and the existing set produced with \gls{mmcs} \texttt{6.5}.
+While the new version of \gls{corsika} shows some differences compared to
+the older version, the differences between the two interaction models are negligible 
+on the image parameter level.
+Considering the problematic license of \gls{fluka} and that \gls{urqmd} also runs
+simulations about twice as fast, it was decided to use \gls{urqmd} for the new production
+of \gls{fact} simulations.

@@ -1,0 +1,43 @@
+\NewDocumentCommand \Eref {o} {\ensuremath{{E_\text{ref}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \Emax {o} {\ensuremath{{E_\text{max}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \Emin {o} {\ensuremath{{E_\text{min}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \Eest {o} {\ensuremath{{E_\text{est}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \Etrue {o} {\ensuremath{{E_\text{true}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \tobs {o} {\ensuremath{{t_\text{obs}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \Rmax {o} {\ensuremath{{R_\text{max}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \Aeff {o} {\ensuremath{{A_\text{eff}\IfValueT{#1}{^{#1}}}}}
+\NewDocumentCommand \PI {o} {\ensuremath{\symup{π}}}
+\NewDocumentCommand \ceres {} {\gls{ceres}}
+\NewDocumentCommand \mopro {} {\texttt{mopro3}}
+\NewDocumentCommand \facttools {} {\texttt{FACT-Tools}}
+
+\let\textd\d
+\RenewDocumentCommand \d {m} {\TextOrMath{\textd{#1}}{\mathinner{\symup{d}#1}}}
+
+\NewDocumentCommand \fact {} {\gls{fact}}
+
+\NewDocumentCommand \m {m} {\ensuremath{\symbf{#1}}}
+\let\vaccent\v
+\RenewDocumentCommand \v {} {\TextOrMath{\vaccent}{\symbf}}
+
+\NewDocumentCommand \eg {} {e.\,g.\ }
+
+\DeclareMathOperator{\tp}{tp}
+\DeclareMathOperator{\fp}{fp}
+\DeclareMathOperator{\fn}{fn}
+\DeclareMathOperator{\tn}{tn}
+\DeclareMathOperator{\recall}{recall}
+\DeclareMathOperator{\precision}{precision}
+\DeclareMathOperator{\tpr}{tpr}
+\DeclareMathOperator{\fpr}{fpr}
+
+\NewDocumentCommand \AROC {} {\ensuremath{A_\text{roc}}}
+
+\DeclarePairedDelimiter\abs{\vert}{\vert}
+\DeclareMathOperator\sgn{sgn}
+\NewDocumentCommand \param {m} {\ensuremath{\mathtt{#1}}}
+
+\NewDocumentCommand \Non {} {\ensuremath{N_{\text{on}}}}
+\NewDocumentCommand \Noff {} {\ensuremath{N_{\text{off}}}}
+
+\DeclareSIUnit\sigma{σ}

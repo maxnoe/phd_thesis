@@ -1,0 +1,30 @@
+\begin{tikzpicture}
+  \newlength\mydeg
+  \setlength{\mydeg}{2cm}
+
+  \pgfdeclarelayer{bg}
+  \pgfsetlayers{bg,main}
+
+  
+  \node[star, star points=5, fill=yellow!80!red, minimum height=0.3cm] (source)  at (0, 0) {};
+
+  \node[draw=darkBlue, cross out, line width=2pt, minimum height=0.3cm] (p1) at (-0.6\mydeg, 0) {};
+  \node[draw=darkRed, cross out, line width=2pt, minimum height=0.3cm] (p2) at (0.6\mydeg, 0) {};
+
+  \begin{pgfonlayer}{bg}
+    \draw[thick, black!20, dashed] (p2) circle (0.6\mydeg);
+    \draw[thick, black!20, dashed] (p1) circle (0.6\mydeg);
+  \end{pgfonlayer}
+
+  \draw[thick, darkBlue] (p1) circle (2.25\mydeg);
+  \draw[thick, darkRed] (p2) circle (2.25\mydeg);
+
+  \foreach \ang in {60,120,180,240,300} {
+    \path (p1) -- ++ (\ang:0.6\mydeg) node[circle, minimum height=0.3cm, fill=blue!50!black] {};
+  }
+  \foreach \ang in {0,60,120,240,300} {
+    \path (p2) -- ++ (\ang:0.6\mydeg) node[circle, minimum height=0.3cm, fill=red!50!black] {};
+  }
+
+  \draw[{Bar[]Triangle[]}-{Triangle[]Bar[]}] ([yshift=-0.3cm]p1.center) -- ([yshift=-0.3cm]source.center) node [midway, above] {\SI{0.6}{\degree}};
+\end{tikzpicture}

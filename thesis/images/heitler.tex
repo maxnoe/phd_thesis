@@ -1,0 +1,25 @@
+\tikzset{
+  gamma/.style={edge label=\ensuremath{\symup{\gamma}}},
+  eminus/.style={edge label=\ensuremath{\symup{e}^-}},
+  eminus'/.style={edge label'=\ensuremath{\symup{e}^-}},
+  eplus/.style={edge label=\ensuremath{\symup{e}^+}},
+  eplus'/.style={edge label'=\ensuremath{\symup{e}^+},},
+}
+\feynmandiagram[tree layout, sibling distance=7.5mm, level distance=10mm] {
+  i1 [particle=\ensuremath{\symup{\gamma}}] -- [photon] l1v1,
+  l1v1 -- [fermion, eminus'] l2v1,
+    l2v1 -- [fermion, eminus'] l3v1,
+      l3v1 -- [fermion, eminus'] l4v1,
+      l3v1 -- [photon, gamma] l4v2,
+    l2v1 -- [photon, gamma] l3v2,
+      l3v2 -- [fermion, eminus'] l4v3,
+      l3v2 -- [anti fermion, eplus] l4v4,
+
+  l1v1 -- [anti fermion, eplus] l2v2,
+    l2v2 -- [anti fermion, eplus'] l3v3,
+      l3v3 -- [anti fermion, eplus'] l4v5,
+      l3v3 -- [photon, gamma] l4v6,
+    l2v2 -- [photon, gamma] l3v4,
+      l3v4 -- [fermion, eminus'] l4v7,
+      l3v4 -- [anti fermion, eplus] l4v8,
+};

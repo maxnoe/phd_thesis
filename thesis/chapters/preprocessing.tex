@@ -1,0 +1,536 @@
+\chapter{From Raw Data to Image Parameters}\label{chp:preprocessing}
+The topic of this chapter is the path from \gls{fact}'s raw data, be it measured
+by the telescope or simulated by software, to a small number of image parameters.
+
+This is a large reduction in the amount of data, from several hundred terabytes
+of raw data for all recorded events since \gls{fact} started observing, to
+under two hundred gigabytes for the image parameters.
+These image parameters will later be used to estimate the physical properties
+of the primary particle that induced the air showers as described in \autoref{chp:reconstruction}.
+
+\section{Data Format and Structure}
+
+\gls{fact}'s data acquisition system writes one file per so called \emph{run},
+which under normal data taking conditions corresponds to five minutes of observation time.
+During twilight, \gls{fact} will also use one minute long runs.
+Several other types of runs, mostly for calibration purposes, do not have a fixed observation time
+but a fixed number of recorded events.
+
+The raw data of a single event consists of the digitized voltage series for each
+of the 1440 pixels.
+For physics runs, 300 values for each pixel are stored, corresponding to a total
+time of \SI{150}{\nano\second}. 
+Due to the trigger configuration, the main signal of a Cherenkov shower is expected around \SI{25}{\nano\second} 
+and is usually around \SI{50}{\nano\second} long. 
+In the end of the time series, a calibration signal is fed into every ninth pixel,
+which is however not used in the analysis.
+
+In addition to the voltage series, metadata is provided,
+including the time the event has been observed and the physical capacitor first
+digitized for each \gls{drs4} chip, which is needed for the calibration.
+A typical \gls{fact} data run contains around \num{20000} events.
+
+The raw data is stored in a custom extension of the \gls{fits}\cite{fits} file format.
+This custom extension provides faster and higher compression \cite{zfits} than for example \texttt{gzip}, but results in files that are not fully compliant with the current
+\gls{fits} standard~\cite{fits4.0}.
+Thus custom software is required to read the telescope's raw data from the \emph{binary table extension} that was compressed using the algorithms described in \cite{zfits}.
+To make things worse, the description in \cite{zfits} differs in subtleties
+from the actual implementation in the \gls{fact} data acquisition software available in \cite{fact++}.
+Simulated raw data is stored in standard-compliant \gls{fits} files using the same
+general structure, but containing additional information about the simulations,
+like the energy or type of the particle that induced the air shower.
+
+The analysis also needs additional information not available from the raw data
+input files.
+This so called auxiliary data is stored in a \gls{fits} file each per telescope subsystem and per
+observation night. 
+The frequency in which information is stored into these files is different for each
+subsystem and depending on the type of information, either the closest data point,
+the last data point or an interpolation has to be used to derive the needed information
+for the event at hand. 
+Auxiliary data include the current pointing position of the telescope, which
+is recorded by the telescope's drive every two seconds, and the currently observed
+source, which is only reported when a new observation is started.
+
+\section{\facttools{}}
+
+All steps described in this chapter will be carried out using the software
+\facttools{}\cite{fact-tools}.
+This software is written in \texttt{Java} and was developed in Dortmund starting in late 
+2012 in close cooperation with the computer science department as part of the
+Collaborative Research Center 876.
+The \facttools{} are an extension of the \texttt{streams} framework \cite{phd-bockermann}
+to analyze the raw data of \gls{fact}.
+A large part of this work was concerned with improving this software in various aspects.
+Between version \texttt{v0.15.0}, which was released in May 2016 and version \texttt{v1.1.3},
+which was released in October 2019, a total of 1232 commits\footnote{A commit is a single set of changes
+made to a collection of files, tracked by a Version Control System.} were made, of which
+552 were contributed by the author of this thesis.
+
+The \texttt{streams} framework allows for modelling of data flow graphs using \texttt{xml}
+definitions.
+A \texttt{Stream} creates new data items, e.\,g.\ by reading from an input file.
+Each data item is then handed over to a \texttt{Process} that executes a number of
+\texttt{Processor}s that get the data item as input and return it as output, doing
+calculations and adding new members to it in between.
+A \texttt{Processor} can also track state between data items and execute code
+after the \texttt{Stream} has finished.
+\texttt{Service}s provide out-of-flow data to \texttt{Processor}s, for example
+calibration constants for the events that are not stored in the input files themselves.
+The \facttools{} define and implement \texttt{Stream}s and \texttt{Processor}s that read \gls{fact} data
+and apply the necessary analysis steps to process the data all the way from 
+raw time series for each pixel to image parameters per event.
+The \texttt{xml} file for steering the \facttools{} standard analysis used for
+analysing observed data is available in Appendix~\ref{apx:std_analysis}.
+It includes other \texttt{xml} files, that each perform the steps detailed in the next 
+sections.
+The \facttools{} are compiled and bundled together with all dependencies
+into a single executable jar file~\cite{jar}, which is platform independent and only
+requires the \texttt{Java} virtual machine in version 8 installed.
+The \texttt{jar} files are produced and uploaded automatically for each released version.
+
+
+\section{Raw Data Calibration}\label{sec:calibration}
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/drs_calib.pdf}
+  \caption{%
+    Time series of a single \gls{fact} pixel before (blue, left $y$\=/axis) and after \gls{drs4} calibration (orange, right $y$\=/axis).
+  }\label{fig:calibration}
+\end{figure}
+\noindent As described in \autoref{sec:camera}, the \gls{fact} camera digitizes the 
+analog signal of the pixels using \gls{drs4} chips, which introduce
+several artifacts that have to be taken care of.
+First, the amplitude of each voltage sample is corrected for their temperature
+dependence and production differences using calibration constants
+from the \gls{drs4} calibration files that are generated several times during the
+night~\cite{fact-sipm-performance}.
+This step also converts the time series back from \gls{adc} counts to voltages.
+After the amplitude calibration, jumps and spikes are removed.
+In the final step of the \texttt{drs4} calibration, the time series are corrected
+for the not perfectly uniform sampling.
+Jumps and non-uniform sampling are not simulated by \texttt{CERES}, thus these
+calibration steps are only applied to observed data.
+\autoref{fig:calibration} shows the time series of a pixel before and after
+the calibration.
+
+\section{Signal Extraction}
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/gains.pdf}
+  \caption{%
+    Median pixel gain over time as provided by the \texttt{GainService}.
+    The file used before was from November 2013 and the contained gains are far from the mean
+    for other dates, potentially inducing a bias in the reconstruction of the number of photons.
+    The outliers in 2017 are from a broken electronics board in the camera,
+    which at that time had been replaced but not yet calibrated.
+  }\label{fig:gains}
+\end{figure}
+In a first data reduction step, the time series per pixel are reduced to 
+an estimated number of photons and their mean arrival time for each pixel.
+This is done by integrating the pulses over 30 time slices starting at
+the half height of the maximum.
+The conversion factor from this integral to the number of photons, called gain,
+is taken from \enquote{single p.\,e.} measurements, 
+runs with closed camera lid, so no light can reach the photosensors,
+where \gls{fact} reads out a fixed number of events, usually \num{10000}.
+These runs are taken at the beginning and end of each night.
+Due to dark counts and cross talk, these events contain pulses of single to
+a couple of \gls{pe} and allow the calculation of the gain and other 
+properties of the photon detectors~\cite{fact-sipm-performance}.
+Until version \texttt{v1.0.0}, the \facttools{} analysis used the result of a single
+gain measurement. 
+However, the gain is not completely stable over time.
+This was fixed by implementing a new service, always providing the closest available
+gain data for the data being analysed.
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/image_proton.pdf}
+  \caption{%
+    Number of photons (left) and arrival time (right) relative to the mean arrival time
+    of the pixels selected by the image cleaning (gray border) for a simulated 
+    \SI{15}{\TeV} proton shower.
+  }\label{fig:image}
+\end{figure}
+
+
+The mean arrival time of the photons is estimated by the inflection point of a third order polynomial fitted to the rising edge of the pulse.
+The signal of known defective pixels is interpolated from their neighbors.
+\autoref{fig:image} shows the number of photons and arrival times for each pixel
+of simulated proton event, while \autoref{fig:image-gamma} shows the same
+for a simulated gamma event.
+The third common event signature caused by a highly energetic muon reaching the
+telescope is shown in \autoref{fig:image-muon}.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/image_gamma.pdf}
+  \caption{%
+    Number of photons (left) and arrival time (right) relative to the mean arrival time
+    of the pixels selected by the image cleaning (gray border) for a simulated 
+    gamma shower with $E=\SI{1.7}{\TeV}$.
+  }\label{fig:image-gamma}
+\end{figure}
+
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/image_muon.pdf}
+  \caption{%
+    Number of photons (left) and arrival time (right) relative to the mean arrival time
+    of the pixels selected by the image cleaning (gray border) for a simulated 
+    muon with $E = \SI{100}{\GeV}$ reaching the telescope.
+  }\label{fig:image-muon}
+\end{figure}
+
+
+\section{Image Cleaning}\label{sec:cleaning}
+For most of the events, only a small fraction of the pixels will contain any
+signal created by Cherenkov photons.
+Goal of the image cleaning is to discard pixels that only contain noise or \gls{nsb} photons.
+
+In \facttools{}, this is done in a stepwise procedure:
+\begin{enumerate}
+  \item Find pixels containing more photons than an upper threshold $t_1$
+  \item Remove pixels with less than $N$ neighbors above that threshold
+  \item Add neighbors of the remaining pixels that are above a lower threshold $t_2$
+  \item Remove pixels that have less than $N$ neighbors with an arrival time inside a time limit $\Delta t$ of the pixels own arrival time
+  \item Remove single pixels with less than $N$ neighbors in the remaining pixels
+  \item Remove pixels that have less than $N$ neighbors with an arrival time inside $\Delta t$
+  \item Remove pixel groups that only comprise pixels close to a bright star in the field of view
+\end{enumerate}
+The last step is necessary, as a bright star in the field of view locally creates 
+a higher noise level, which would worsen the reconstruction especially of small showers.
+This happens regularly for galactic sources.
+For Crab Nebula observations,
+$\zeta$~Tauri, a star with an apparent magnitude of \num{3.0}, is inside the field of view.
+Before \facttools{} version \texttt{v1.1}, stars had to be defined
+in the steering \texttt{xml} file.
+To further improve the automatic analysis, for example in case
+of follow-up observations for external alerts~\cite{fact-followup}, a new service was implemented
+that automatically queries the \enquote{Yale Bright Star Catalog}~\cite{yale_bright_star} for
+the current pointing position of the telescope and identifies all stars brighter
+than a certain magnitude inside the field of view.
+For the standard processing, the maximum magnitude is 4.
+The noise level created by bright stars is visualized in Appendix~\ref{apx:pedvar}.
+\autoref{fig:image} shows the pixels selected by the image cleaning for $t_1=5$, $t_2=\num{2.5}$, 
+$N=2$ and $\increment t = \SI{5}{\nano\second}$.
+These are the values used to process all datasets in this thesis.
+
+
+\section{Image Parameterization}\label{sec:parameters}
+\begin{figure}
+  \begin{captionbeside}{%
+    The classical Hillas features for an example shower image.
+    Basis is a principal component analysis of the light distribution. 
+    The first component is called \texttt{length} and the second \texttt{width}.
+    Orientation is defined by the angle of the first component to the $x$\=/Axis.
+    For visualization, an ellipse with \texttt{length} and \texttt{width} as  
+    semi-major and semi-minor axis is shown.
+    Higher order moments are calculated in the rotated coordinate system defined
+    by the principal components.
+  }%
+    \raisebox{\dimexpr\baselineskip-\totalheight\relax}{%
+      \includegraphics{build/plots/hillas_features.pdf}%
+    }
+  \end{captionbeside}\label{fig:hillas}
+\end{figure}
+\noindent To further reduce the amount of data,
+the events are now processed from the cleaned images of amplitude and arrival time to a much lower number of features per event.
+It is crucial to retain as much information as possible through finding 
+descriptive features.
+Much work has been put into finding such features over the last decades, 
+a first set of features was proposed by Michael Hillas for the analysis of Whipple
+observations in 1985~\cite{hillas}, these features are still used today and are visualized
+in \autoref{fig:hillas}.
+The total number of photons in the pixels after cleaning is referred to as \texttt{size}.
+The location of the shower image is described by the two Cartesian coordinates of its center of gravity, the average of the pixel coordinates weighted with the number of photons in each pixel.
+Now, to characterize the extension and orientation of the shower, a principal component
+analysis of the two-dimensional light distribution is performed.
+The covariance matrix of the pixel coordinates weighted with the number of photons
+in the pixels is calculated, then its eigenvalues and eigenvectors.
+The eigenvalues correspond to the variances along the principal components,
+the larger corresponding standard deviation is called \param{length}, the smaller \param{width}.
+The orientation is described by the angle of the larger component's eigenvector 
+to the $x$-axis, called \param{delta}.
+The orientation of the large component corresponds to the shower axis,
+the elongation of the primary particle's trajectory.
+The principal components and the center of gravity define the shifted and rotated shower coordinate system,
+where coordinates along the major axis are called longitudinal and transversal along the minor axis.  
+In addition to \param{width} and \param{length},
+also the higher moments \param{skewness} and \param{kurtosis} are calculated
+along the principal components.
+Skewness along the shower axis can indicate the direction the shower came from.
+General descriptive statistics for the light distribution and the arrival times
+are also calculated.
+
+Four similar features describe the amount of light in the brighter sections
+of the image compared to the total amount of light:
+\param{concentration\_core} is the percentage of light inside
+the Hillas ellipse, \param{concentration\_cog} the percentage of light of the three
+pixels closest to the center of gravity and \param{concentration\_one\_pixel} and
+\param{concentration\_two\_pixel} are the percentages of the brightest and the
+two brightest pixels, respectively.
+
+As not all showers, especially at higher energies, are completely enclosed by the camera,
+features quantifying containment are needed.
+For this, the percentage of light in the border pixels of the camera can be used.
+This is called \param{leakage1} for the outermost ring of pixels and \param{leakage2} for the
+two outermost rings of pixels.
+The number of pixels remaining after cleaning is called \param{num\_pixel\_in\_shower}
+and the amount of groups of connected pixels after the cleaning is called \param{num\_islands}.
+
+To describe the temporal development of the shower along its axis,
+a linear regression of the arrival times vs.\ the longitudinal position is performed.
+The resulting slope helps in determining the direction of the shower and is called \param{time\_gradient\_slope\_long}.
+
+In older versions, \facttools{} also calculated a number of features that depended
+on a known point source position.
+It was decided to drop these features to make the image parameterization data 
+level agnostic of any assumptions about a source.
+Without assumptions about a source position baked into the reconstruction,
+later stages of the analysis can perform the appropriate step for different kinds of observations.
+
+
+\section{Output file format}
+Until version \texttt{v0.16.0}, \facttools{} only supported text-based output
+for analysis results, namely comma separated values and \gls{json}.
+This had a number of disadvantages, in particular file size, writing and parsing speed
+and the limited amount of metadata supported by these formats.
+\gls{json} while able to represent nested data well, is missing the possibility
+to store infinity and not-a-number values as occur often in scientific computing.
+To improve the situation, a new \texttt{FITSWriter} was implemented to store
+analysis results into \gls{fits} binary table extensions.
+\gls{fits} files have headers for metadata, e.\,g.\ the software version and processing
+date used to perform the analysis are stored.
+Binary tables store data more efficient, are faster to write and read.
+Additional header fields can be added by the process, as of \texttt{v1.1.2} the standard analysis
+stores information  about the observed source and the \gls{drs} calibration file used.
+
+\section{Celestial Coordinate Systems and Transformations}\label{sec:coordinate-transforms}
+Because Earth is not a stable observation platform in the universe,
+it is necessary to assign fixed coordinates to sources that can then
+be transformed into a local coordinate frame for an observer at
+a specific location on Earth at a given time.
+This section is a stark simplification of the actual complexity of this
+topic, which is needed to achieve the precisions at the milliarcsecond level.
+For an in-depth treatment, refer to \cite{expl-suppl}.
+(Un\=/)Fortunately, Cherenkov astronomy has several limiting factors that make this level
+of precision unnecessary. 
+For example, the best reconstruction algorithms for stereoscopic telescopes
+only reach uncertainties on the arcminute level~\cite{cta-performance} at the highest energies. 
+This will probably be irreducible due to the stochastic nature of the particle cascades
+in the atmosphere, limited knowledge about atmospheric conditions and deflection
+of the charged secondaries in the Earth magnetic field.
+Theoretical limits to the reconstruction of gamma rays observed with \glspl{iact} are discussed in~\cite{iact-limits}.
+Correspondingly, pixels of Cherenkov telescopes usually have a field of view of several arcminutes.
+
+\subsection{Equatorial Coordinates in the ICRS}
+
+The current standard for celestial coordinates is the \gls{icrs},
+with the origin at the solar system's barycenter and the coordinate axes defined
+by catalogs of specific sources with fixed coordinates called reference frames.
+It is the first reference system, that does not depend on Earth's orientation
+at a specific point in time, called an epoch.
+However, the axes of the ICRS are closely\footnote{the total deviation is around \SI{0.02}{\arcsecond}~\cite[105]{expl-suppl}} aligned to that of the equatorial
+system of epoch {\lining J2000.0}, January \nth{1}, 2000 at 12:00 terrestrial time~\cite[Chapter~4]{expl-suppl}.
+This achieves backwards compatibility to catalogs expressed in the formerly used reference system.
+
+The $z$-axis points closely along the rotation axis of the Earth and
+the $x$-axis points towards the vernal equinox.
+The equinoxes are the points on Earth's orbit around the sun
+where the plane of Earth's equator crosses the ecliptic, the plane
+in which Earth rotates around the sun.
+Vernal refers to the equinox Earth reaches at the beginning of spring and the
+autumnal equinox is reached in fall.
+Usually, spherical coordinates are used, where longitude is called \emph{right ascension} $α$ and the latitude is called \emph{declination} $δ$. 
+As right ascension is related to Earth's rotation, it is often expressed in hour angles,
+with $24^{\mathrm{h}} = \SI{360}{\degree}$.
+
+Reference frames are defined by specifying the coordinates of bright extragalactic 
+objects, mostly quasars.
+Quasars are a broad category of \glspl{agn} with very bright accretion disks,
+which belong to the most luminous objects in the universe.
+Currently, the most precise reference frame—the third international reference frame—is made up
+of 4536 extragalactic radio sources observed using \gls{vlbi}
+reaching a precision down to \SI{30}{\micro{as}}~\cite{icrf3}.
+
+
+\subsection{Earth Locations}
+Locations on Earth are expressed using geodetic latitude $λ$, longitude $ϕ$ and height above
+a reference ellipsoid.
+Nowadays it is implemented as the WGS84 reference frame by the GPS satellite network and reference stations aligned with the coordinate grid~\cite[Chapter~5]{expl-suppl}.
+In this frame, the position of \gls{fact} is \ang{28;45;41}\,N and \ang{17;53;27}\,W.
+
+\subsection{Local Coordinates}
+\begin{figure}
+  \centering
+  \input{images/corsika_vs_telescope_az.tex}
+  \caption{%
+    Relation of \gls{corsika}'s horizontal coordinate system for particle movement
+    to the one used for the pointing direction of an \gls{iact}.
+    $φ_t = \ang{180} - φ_p + \increment_{\text{mag}}$, where $φ_t$ is the pointing
+    azimuth of the telescope in the classical horizon system, $φ_p$ is the 
+    azimuth of the particle direction in \gls{corsika}'s system and $\increment_{\text{mag}}$
+    is the angle between the North Magnetic Pole and the Geographic North Pole, called magnetic
+    declination.
+    For this visualization, $φ_p = \ang{30}$, $\increment_{\text{mag}} = -\ang{10}$ and
+    thus $φ_t = \ang{140}$.
+  }\label{fig:azimuth}
+\end{figure}
+
+\noindent Local coordinates for an observer are usually expressed using a horizontal spherical coordinate 
+system with altitude angle $a$ as latitude perpendicular to the horizon and the azimuthal angle $φ$ as longitude in the horizontal plane.
+Especially in Cherenkov astronomy, the zenith distance $ϑ = \ang{90} - a$ is used
+regularly instead of altitude $a$.
+Several definitions exist for the origin and direction of $φ$,
+the most common being $φ = \SI{0}{\degree}$ for the direction of geographic north, going positive to the east ($φ = \ang{90}$).
+\gls{corsika} uses the direction towards the North Magnetic Pole as origin
+and grows positive towards west.
+This is used to simplify calculations for the deflection in Earth's magnetic field.
+A downside of this approach is the introduction of a time and location dependent offset in azimuth of \gls{corsika}'s coordinate system to the ones used in astronomy\footnote{This the same effect that needs to be compensated for classical magnetic compass navigation.}.
+The position of the North Magnetic Pole is not identical
+to the Geographic North Pole and changes over time.
+\gls{corsika} uses this coordinate system to specify the movement direction of the particle, which is directly
+opposite to the pointing direction of a telescope observing said particle,
+this situation is shown in \autoref{fig:azimuth}.
+\ceres{} converts from particle direction to pointing direction when reading \gls{corsika}
+output and corrects for the difference between magnetic and geographic north.
+
+\subsection{Detector Coordinates}
+FACT uses a detector coordinate frame that uses two dimensional Cartesian 
+coordinates in the focal plane of the telescope. 
+The coordinate axes are defined so that when standing in the reflector dish,
+looking onto the camera, $x$ points right and $y$ points up.
+This coordinate frame is used to calculate image parameters and  is used to express
+reconstructed source positions before transforming them into the horizontal coordinate frame or \gls{icrs}.
+
+\subsection{Time}
+The current time system based on Earth's orientation towards the sun
+is called \gls{ut1} and is measured by \gls{vlbi} observations of distant sources,
+and is thus only available after some time, usually observations are performed and values are published daily.
+The duration of a \gls{ut1} day underlies a general slow increase and random fluctuations.
+Civil time keeping is using \gls{utc}, a timescale based on \gls{tai}, the time
+kept by hundreds of atomic clocks around the globe monotonically counting SI seconds.
+\gls{utc} is kept within \SI{0.9}{\second} of \gls{ut1} by introducing leap seconds
+up to twice a year.
+At time of writing, \gls{utc} is 37 seconds behind \gls{tai}.
+When precision at the arcsecond level or below is not required, directly 
+using \gls{utc} for the Earth rotation angle is a good enough approximation.
+Otherwise, tabulated values of the difference between \gls{ut1} and \gls{utc} have
+to be used.~\cite[Chapter~3]{expl-suppl}
+
+\subsection{Implementation of Coordinates and System Transforms}
+\noindent In general, any conversion from the celestial reference frame into the local
+frame of an observer, e.\,g.\  into the horizon system, requires taking into account
+precession and nutation of Earth's rotation axis,  Earth's rotation, movement of the pole
+relative to Earth and the position of the observer.
+Precession is the longterm circular movement of the rotation axis due to the pull of the sun, moon and planets.
+Nutation is the additional, periodic deviation from this.
+Unfortunately, no library for \texttt{java} was readily available to perform these 
+transformations.
+Before version \texttt{v1.0.0}, \facttools{} only had a very rudimentary support for
+transforming from equatorial coordinates into camera coordinates, completely disregarding
+precession and nutation that was thus only accurate to a level of \ang{;10;} steadily getting
+worse with time. 
+Because pointing and source position were transformed in the same way, the
+relative positions in detector coordinates were still correct.
+For \texttt{v1.0.0}, a full system of coordinate transforms implementing equatorial,
+horizontal, detector and earth location frames and transformation between
+these systems has been developed.
+The transformation between equatorial and horizon system uses an approximation for
+precession resulting in an accuracy better than \ang{;;30}, see \autoref{fig:precision}~\cite{coord-approx}.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/coord_precision.pdf}
+  \caption{%
+    Deviation between \facttools{} and \texttt{astropy}~\cite{astropy}
+    for coordinate transforms from equatorial to horizontal of
+    the Crab Nebula over 25 years in 6 hour intervals.
+    This basically shows the effect of Earth's nutation, which is not taken into account
+    in the coordinate transforms in \facttools{}.
+  }\label{fig:precision}
+\end{figure}
+
+To convert from horizontal coordinates to camera coordinates,
+the spherical coordinates of the direction of interest is converted into Cartesian
+coordinates, where $x$ points north, $y$ points east and $z$ points up.
+To align the coordinates with the focal plane, the frame is rotated by the azimuth of the 
+pointing direction $φ_p$ around the $z$-axis and then by the zenith angle of the pointing direction $θ_p$ around the $y$-axis.
+This is equivalent to rotating the vector $r$ by the negative angles:
+\begin{equation}
+  \v{r}' = \m{R}_y(-θ_p) \cdot \m{R}_z(-φ_p) \cdot \v{r}
+\end{equation}
+The coordinates are then projected down onto the focal plane, which is in a distance
+of the focal length $f$ from the origin in the reflector dish. 
+From similar triangles:
+\begin{equation}
+  x'' = \frac{x'}{z'} \cdot f \qquad y'' = \frac{y'}{z'} \cdot f
+\end{equation}
+with $\v{r}' = (x', y', z')^\top$. Now the reflection of the mirror is applied,
+and the coordinate axis are identified with the orientation as wished from the
+definition of the camera coordinate system.
+This finally yields:
+\begin{equation}
+  c_x = -y'' \qquad c_y = x''
+\end{equation}
+The transformations are visualized in \autoref{fig:camera_coords}.
+
+\begin{figure}
+  \centering
+  \input{images/camera_coords.tex}
+  \caption{%
+    From left to right: initial situation, coordinate frames after applying the
+    rotation in azimuth, coordinate frames after applying the rotation in zenith.
+    The dashed orange line shows the source vector after applying the reflection at the
+    mirror.
+  }\label{fig:camera_coords}
+\end{figure}
+
+
+\section{Processing of all FACT data to Image Parameter Level}\label{sec:erna}
+In total, \gls{fact} took approximately \SI{645}{\tera\byte} of compressed raw data until 
+December 2019.
+All of \gls{fact}'s raw data is stored in a tape archive at the \gls{isdc},
+a backup exists on a tape archive in Würzburg.
+Only a subset is available for processing on hard disks at the LESTA cluster due to space constraints.
+
+To analyze all this data using \facttools{} for image parameter extraction,
+a tool for automatically processing \gls{fact} data runs was implemented into
+the \texttt{erna}~\cite{erna} package.
+The general structure is very similar to \texttt{mopro3} described in \autoref{sec:mopro}.
+Again, a database is used for job management. 
+The needed information about \gls{fact} runs and calibration files are duplicated from \gls{fact}'s main database into the \texttt{RawDataFile} and \texttt{DrsFile} tables.
+The \texttt{xml} steering files and the \facttools-jars are also stored in the database and
+are automatically copied to the executing node when needed. 
+A single \facttools{} job is the application of a certain \facttools{} jar in combination
+with an \texttt{xml} file, a raw data file and a \gls{drs} calibration file.
+Like with \texttt{mopro}, additional information needed for the job processing is
+also stored in the database, this includes output file path, processing status,
+walltime for the cluster job and a hash of the result file to be able to detect
+data corruption.
+Unlike the production of simulated data, the processing of the observed
+data depends on external files.
+Thus, another error state is possible: \texttt{input file missing}.
+The \texttt{submitter} program runs perpetually on the computing node able to create \texttt{SLURM} jobs for the \texttt{LESTA} cluster at \gls{isdc},
+continuously checking the database for new jobs to process.
+If such a job is found, it is checked if all needed input files are present at
+the configured location. 
+If yes, the job is submitted into the cluster,
+If not, the job is filed as \enquote{input file missing}.
+Another program runs once a day, checking if missing files have been restored from
+tapes to disk and if that is the case, the jobs are reset and can be processed by 
+the submitter.
+
+The \facttools{} standard analysis has been applied to all \gls{fact} data measured
+between August \nth{21}, 2012, the date where the currently used format for the
+auxiliary data was introduced, and June \nth{30}, 2018.
+In total, \num{149478} runs were processed.
+This was achieved by restoring the data in monthly chunks from the tape archive 
+to the distributed file system of the \texttt{LESTA} cluster.
+Restoring the data from tape to disk took much longer than the actual processing.
+In total, processing of all available \gls{fact} data took three months,
+but happened fully automatically.
+All these runs are now available at the image parameter level in standard conform
+\gls{fits} files for further analysis.

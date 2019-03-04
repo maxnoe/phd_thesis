@@ -1,0 +1,90 @@
+\usepackage[a-3u]{pdfx}
+% for pdf/a compliance, see https://tex.stackexchange.com/a/474336/59716
+\pdfvariable omitcidset=1
+
+% Fixes for float package to be used with komascript
+\usepackage{scrhack}
+
+% fonts 
+\usepackage{fontspec}
+% workadound for broken microtype in TL2018
+\usepackage{luatexbase}
+\usepackage{microtype}
+\usepackage{fontawesome5}
+% language
+\usepackage[main=english, ngerman]{babel}
+\usepackage[autostyle]{csquotes}
+
+
+% math
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{xfrac}
+\usepackage{lscape}
+
+
+\usepackage[
+  mathrm=sym,        % use math font for mathrm, not text font
+  math-style=ISO,
+  bold-style=ISO,
+  sans-style=italic,
+  nabla=upright,
+  partial=upright,
+  warnings-off={
+    mathtools-colon,
+    mathtools-overbracket,
+  },
+]{unicode-math}
+
+\usepackage[
+  locale=US,
+  separate-uncertainty=true,
+  per-mode=symbol-or-fraction,
+  binary-units,
+]{siunitx}
+\sisetup{math-micro=\text{µ},text-micro=µ}
+
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{booktabs}
+\usepackage[super]{nth}
+
+\usepackage{float}
+\usepackage[
+  section, % floats stay in section
+  below, % allow in next section if on same page
+  above, % allow in last section if on same page
+]{placeins}
+
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage[
+  giveninits=true, % abbreviate all first names for consistency
+  urldate=iso,
+  seconds=true,    % needed for urldate=ISO, silences warning
+]{biblatex}
+\addbibresource{references.bib}
+\addbibresource{mwl_crab.bib}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{shapes.misc}
+\usepackage[compat=1.1.0]{tikz-feynman}
+\usepackage{tikz-3dplot}
+
+
+\usepackage{todonotes}
+\usepackage{listings}
+
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage[shortcuts]{extdash}
+
+\usepackage[xindy, toc]{glossaries}
+\setacronymstyle{long-short}
+\makeglossaries
+
+\usepackage[pass]{geometry}

@@ -1,0 +1,749 @@
+\chapter{Instrument Response Functions and Sensitivity of FACT}\label{chp:performance}
+
+In this chapter, I will present the sensitivity and other performance characteristics of
+\gls{fact} together with the analysis methods described in Chapters \ref{chp:preprocessing} and
+\ref{chp:reconstruction}.
+
+First, I will present the used datasets and an event pre-selection in \autoref{sec:datasets},
+then I will discuss the instrument response functions in \autoref{sec:irf}.
+In \autoref{sec:sensitivity} the flux sensitivity will be evaluated on observed and simulated
+data.
+
+\section{Datasets}\label{sec:datasets}
+
+In the following, I will present the simulated and observed datasets
+used for estimating the sensitivity of \gls{fact} as well as the
+event pre-selection.
+Finally, I will look into the agreement between simulated and observed data.
+
+
+\subsection{Simulated datasets}
+
+Four simulated datasets are used for the analysis:
+\begin{itemize}
+  \item Diffuse protons are needed for the training of the particle classification 
+    and the performance evaluation.
+  \item Diffuse gamma rays are needed for the training of all four models.
+  \item Gamma rays from a point source observed in wobble mode are needed
+    for the calculation of the instrument response functions and the sensitivity calculation.
+  \item Diffuse helium nuclei are simulated as additional background class but only 
+    used for comparison of observations and simulations.
+\end{itemize}
+The diffuse and point-source gamma rays are generated from the same \gls{corsika} 
+simulations through different settings for \texttt{CERES}.
+The run-wise settings for the corsika simulations are listed in \autoref{tab:corsika-runs}.
+For all simulated datasets, the azimuth angle was simulated over the whole
+\ang{360} range, each individual run covering \ang{10}.
+The zenith angle was simulated between \ang{0} and \ang{30}, each run with a
+range of \ang{1}.
+
+\begin{table}
+  \centering
+  \caption{Overview of the \gls{corsika} runs performed for this work}
+  \label{tab:corsika-runs}
+  \begin{tabular}{
+      l
+      S[table-format=1.1]
+      S[table-format=3.0]
+      S[table-format=+1.1]
+      S[table-format=3.0]
+      S[table-format=5.0]
+      S[table-format=2.0]
+      S[table-format=5.0]
+    }
+    \toprule
+    Primary &
+    {$E_{\min} \mathbin{/} \si{\TeV}$} &
+    {$E_{\max} \mathbin{/} \si{\TeV}$} &
+    {$\gamma$} &
+    {$R_{\max} \mathbin{/} \si{\meter}$} &
+    {$N_\text{showers}$} &
+    {Reuse} &
+    {$N_\text{runs}$} \\
+    \midrule
+    Gamma & 0.2 & 100 & -2.0 & 300 & 5000 & 1 & 10800 \\
+    Proton & 0.1 & 200 & -2.0 & 500 & 10000  & 20 & 21600 \\
+    Helium & 0.1 & 200 & -2.0 & 500 & 5000  & 20 & 1080 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The simulations were performed at the LiDO3~\cite{lido3} cluster at TU Dortmund
+using the \texttt{mopro3} orchestration software described in \autoref{sec:mopro} and
+would have taken approximately 75 years on a single CPU.
+The output size of the \texttt{eventio} files containing the Cherenkov photons on the 
+ground have a total size of \SI{6}{\tera\byte} for the gamma rays and \SI{68}{\tera\byte}
+for the protons after compression using \texttt{zstd}.
+
+The datasets simulated for \cite{phd-temme} using \gls{mmcs} 6.5 introduced
+an additional photon acceptance (\param{APA}) for the detector simulation,
+that only accepts photons with a probability of \SI{85}{\percent}, 
+randomly discarding \SI{15}{\percent} of the photons reaching the detector.
+This was motivated by unsimulated obstruction of light by the telescope's structure and
+neglected imperfect transparency of the Winston cones.
+However, as described in \autoref{chp:preprocessing},
+the way \facttools{} handles the gain was changed.
+As this also has an effect of the reconstructed amount of light,
+the value for this setting is also revisited.
+Three different sets of simulations were produced, using \param{APA} values of \SI{85}{\percent},
+\SI{95}{\percent} and deactivating it completely (\SI{100}{\percent}).
+All other settings for the detector simulation stayed unchanged from \cite[131\psq]{phd-temme}
+The full analysis will be performed for the three different settings independently
+and the results will be compared.
+
+The detector simulation for the simulated gamma rays is done twice,
+once to produce the diffuse gammas using a maximum scattering angle of \ang{6}
+and once to produce gammas from a point source observed in wobble mode using a wobble distance of \SI{0.6}{\degree}.
+In total, this leads to eight simulated datasets with an overall size of \SI{25}{\tera\byte},
+which was processed by \facttools{} using the \texttt{erna} package~\cite{erna},
+also on \texttt{lido3}.
+\texttt{erna} allows to directly collect the output of many parallel running \facttools{}
+jobs into a single \texttt{hdf5} file, as used for the further analysis.
+The \facttools{} processing is by far the fastest processing step.
+Compared to the 75 CPU years for the \gls{corsika} simulations, \num{5.3} CPU years
+for the \texttt{CERES} simulations, running \facttools{} only took under one CPU year.
+
+The proton dataset is split into two parts,
+one for training of the separation model using a quarter of the simulated events
+and the remaining three quarters for the performance evaluation.
+The diffuse gamma simulations are only used for the training of the energy, separation and
+\param{disp} models and the point-source gammas are only used for
+the performance estimation and the \gls{irf} calculation.
+
+If no mention of \param{APA} is made, results are shown for the dataset with $\param{APA}=\SI{85}{\percent}$ and results for the other datasets are
+in Appendix~\ref{apx:apa-not-85}.
+
+\subsection{Crab Nebula Observations}
+To evaluate the quality of the simulations, calculate the sensitivity
+on observed data and estimate the spectral energy distribution 
+of the Crab Nebula a set of high quality runs taken between October 2013 and February
+2014 with a total observation time of \SI{91}{\hour} is used.
+This is the same data sample as used in \cite{phd-temme} for direct comparison.
+The runs were selected using the following criteria, also from \cite{phd-temme}:
+\begin{description}
+  \item[Camera current] below \SI{8}{\micro\ampere}. The current created by the
+    \glspl{sipm} is a direct measure for the amount of \gls{nsb} photons.
+    This limits the sample to dark night conditions.
+  \item[Moon zenith distance] greater than \ang{100}, excluding runs where
+    the moon is above or just below the horizon.
+  \item[Zenith distance] of the source smaller than \ang{30}.
+    This eliminates the need for special treatment of zenith dependence and offers the best sensitivity.
+  \item[Trigger rate] between 40 and 85 Events per second. This is the nominal operating
+    range of \gls{fact}, higher or lower values indicate bad environmental conditions
+    like clouds (lower rate) or illumination by a light source like car lights (higher rates).
+  \item[Trigger readiness] during more than \SI{95}{\percent} of the observation time,
+    this mainly excludes runs were the strong LASER light of the \gls{magic} LIDAR system
+    interfered with data taking.
+  \item[Trigger threshold] smaller than \num{350} also indicating dark nights.
+\end{description}
+The \gls{sql} query to extract the runs from \gls{fact}'s database is in Appendix~\ref{apx:crab-runs}.
+
+A tool to collect the single \gls{fits} files created by the automatic processing
+described in \autoref{sec:erna} provided either with a list of runs or such selection
+criteria into a single \texttt{hdf5} file has been implemented into the \texttt{erna} package
+and was used to create the dataset of the Crab Nebula observations.
+
+Raw data for a subset of this dataset containing runs worth \SI{17.7}{\hour} of observation time
+was published in November 2017 by the \gls{fact} collaboration \cite{fact-open-data}.
+An analysis of the publicly available data based on the analysis described in this work,
+using the \facttools{} and \texttt{aict-tools} has been published at \cite{open-data-analysis}.
+The reconstructed event data was converted into the 
+data format for open-gamma ray astronomy \cite{ogadf} by \cite{phd-bruegge} and used for the first
+combined analysis of Crab Nebula observations by all currently operating Cherenkov
+telescopes in \cite{open-crab}.
+
+
+\subsection{Event Pre-Selection}\label{sec:precuts}
+The target of the event pre-selection is to remove hard to reconstruct, not properly
+or not at all simulated events.
+The selection criteria are discussed in detail in \cite[56\psqq]{phd-temme} and are
+now applied using the \texttt{aict-tools} to all datasets.
+This pre-selection if performed before training the reconstruction models.
+The pre-selection reduces the amount of events for observed data roughly by a factor of two, compare \autoref{tab:events}, and dramatically improves the performance of the classifiers.
+These are the criteria:
+\begin{align*}
+  \param{num\_pixel\_in\_shower} &\geq 10 &
+  \param{num\_islands} &< 8 \\
+  \param{length} &< \SI{70}{\milli\meter} &
+  \param{width} &< \SI{35}{\milli\meter} \\
+  \param{leakage1} &< 0.6  &
+  \param{leakage2} &< 0.85
+\end{align*}
+
+
+\input{chapters/data_mc_comp.tex}
+
+\section{Detection Significance of the Crab Nebula}\label{sec:detection}
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/skymap_apa85.pdf}
+  \caption{%
+    Skymap of the reconstructed positions of all events after applying a
+    prediction threshold of $t_p = \protect\input{build/threshold_apa85.txt}\unskip$.
+    The catalog position of the Crab Nebula is marked using a gray circle.
+    The reconstruction models were trained on the $\param{APA} = \SI{85}{\percent}$ dataset.
+    A small systematic offset of the center of gravity of the reconstructed events
+    vs.\ the catalog position is visible.
+  }\label{fig:skymap}
+\end{figure}
+
+\noindent After training the four models for the event reconstruction on the respective
+simulated datasets, they are now applied to the observed Crab Nebula data
+and the simulated datasets for the performance evaluation.
+The source dependent parameters like the distance of the reconstructed source
+position to the assumed source positions are also computed in this step.
+The result are lists of reconstructed events with very few properties
+per event, a last dramatic reduction of needed space:
+\begin{itemize}[nosep]
+  \item Event identifiers
+  \item Time of observation
+  \item Estimated energy
+  \item Estimated source position in equatorial (\gls{icrs}) coordinates.
+  \item Score of the gamma-hadron-separation
+  \item Pointing direction of the telescope
+  \item Angular distances $θ$ to the observed source and the five off positions
+\end{itemize}
+\gls{fact} uses an event identifier composed of three keys: the night when 
+observations were started (the date of the previous evening if after {\lining 00:00}),
+the run number within that night and the event number within the run.
+Together these three form the unique identifier of an event recored by \gls{fact}.
+Simulations only use the corsika run number and the event number.
+
+As described in \autoref{sec:wobble}, \gls{fact} observes sources in wobble mode.
+This allows simultaneous estimation of the background rate at positions
+in the field of view geometrically identical to the source position.
+All events within an angular distance of $θ_{\max}$ of the suspected source position
+are counted as \enquote{on} events and all events within that radius of any of
+the off positions are counted as \enquote{off} events, used for estimation of the remaining background.
+
+The statistical significance of a source detection can be calculated using
+the likelihood ratio test first proposed by Li and Ma in \cite{lima} testing
+the null hypothesis of no source of gamma rays.
+The null hypothesis is rejected with a significance in units of standard deviations $\sigma$
+given by
+\begin{equation}
+  S = \sqrt{2} \left(
+    \Non \ln\!\left(\frac{1 + α}{α} \cdot \frac{\Non}{\Non + \Noff}\right)
+    + \Noff \ln\!\left((1 + α) \cdot \frac{\Noff}{\Non + \Noff}\right)
+  \right)^{\!\sfrac{1}{2}}\label{eq:lima} \text{\cite[(17)]{lima}}
+\end{equation}
+where \Non{} is the number of events recorded in the on region,
+\Noff{} is the number of events in all off regions and $α$ is the size of
+the on region divided by the size of the Off region.
+The \facttools{} analysis uses 5 identical Off regions, so $α = \num{0.2}$.
+By convention in particle physics, \SI{3}{\sigma} are interpreted as a strong hint
+and \SI{5}{\sigma} are called a detection, corresponding to false alarm probabilities
+of \num{1.3e-3} and \num{3e-7}, respectively.
+In the case for this analysis however, the goal is not detecting a new, unknown
+source but to estimate the potential of the telescope and the analysis.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/significances_apa85.pdf}
+  \caption{%
+    Significance for the detection of the Crab Nebula for a grid-search
+    of event selection parameters using the simulated data with $\param{APA} = \SI{85}{\percent}$
+    for training the models. 
+    $t_p$ was varied between \num{0.5} and \num{1.0} in steps of \num{0.01} and
+    $\theta^2_{\max}$ was varied between \num{0} and \num{0.1} in steps of \num{0.02}.
+    The best event selection in terms of detection significance according to \eqref{eq:lima}
+    is marked using the black circle.
+  }\label{fig:significances}
+\end{figure}
+
+The final step is applying the prediction threshold $t_p$ for the gamma-hadron-separation
+and choosing the radius of the on and off regions $\theta_{\max}$.
+This is done using a grid-search, shown in \autoref{fig:significances}, calculating the
+significance for each combination of $t_p$ and $\theta_{max}$.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/theta2_apa85.pdf}
+  \caption{%
+    Theta-Squared-Plot for the Crab Nebula dataset reconstructed using the models
+    trained on the simulated dataset using $\param{APA} = \SI{85}{\percent}$ and
+    using the $t_p$ and $\theta_{\max}$ yielding the highest significance from \autoref{fig:significances}. 
+  }\label{fig:theta2}
+\end{figure}
+
+With a maximum significance of over \SI{60}{\sigma}, this is a major improvement over the 
+previous analyses. 
+On the same dataset, the RapidMiner based analysis achieved \SI{39.9}{\sigma}~\cite[72]{phd-temme}
+and an analysis using the \texttt{aict-tools}—before the
+new \param{disp} estimation was implemented—achieved \SI{43.3}{\sigma}~\cite{icrc-performance}.
+The onsite quick-look-analysis based on \gls{mars} achieved \SI{41.3}{\sigma}\footnote{Results taken from \gls{fact}'s database.}.
+
+In gamma-ray astronomy, the most iconic visualisation for the detection of a source
+is the $θ²$-Plot. 
+It shows the distribution of the angular distances to the assumed source position
+for both the source of interest and for all off positions combined.
+In case a detection is made, an excess of events in the on region above the off
+region is expected for very small values of $θ²$.
+This can be observed beautifully in \autoref{fig:theta2}.
+
+\begin{table}[htpb]
+  \tablefont
+  \centering
+  \caption{
+    Event numbers after each step of the analysis for the five different datasets.
+    Numbers after applying the threshold and the on region selection are those for
+    the proton and gamma simulations are those of the test datasets, i.\,e.\ only for \SI{75}{\percent} 
+    of the events.
+    No test dataset is created for the diffuse gamma rays.
+  }
+  \label{tab:events}
+  \makebox[\textwidth]{%
+    \input{build/event_num_table.tex}
+  }
+\end{table}
+
+In \autoref{tab:events}, the number of events after each analysis step is shown
+for all datasets.
+
+\section{Separation Performance}
+
+The random forest classifiers to separate gamma ray induced showers from
+hadron induced background were trained using the \texttt{aict-tools} configuration
+in Appendix~\ref{apx:aict-config}.
+It uses \num{500000} samples each of the signal and background class and 18 features
+in total.
+A useful property of tree based models is their ability to provide information 
+about which features contributed the most to the decision making.
+\autoref{fig:feature-importance-sep} shows the feature importances for each
+of the 200 decision trees in each of the 10 cross validation steps.
+
+\begin{figure}
+  \centering
+  \includegraphics[page=4]{build/plots/separator_performance_apa85.pdf}
+  \caption{%
+    Feature importances for the classification model.
+    Each point represents one tree in one of the cross validation iterations,
+    the box plots show the median as blue line, the size of the box goes 
+    from the first to the third quartile and the whiskers extend.
+    The feature \param{area\_size\_cut\_var} has been used for manual 
+    event selection in the \gls{mars} analysis and is defined as $\param{area} / (\log{\param{size}})^2$, where $\param{area}=\PI \cdot \param{width} \cdot \param{length}$.
+    \param{size\_area} is defined as \param{size} divided by \param{area}.
+    Both of these features are generated automatically by the \texttt{aict-tools} from
+    the input features described in \autoref{sec:parameters}.
+  }\label{fig:feature-importance-sep}
+\end{figure}
+
+The \gls{roc}-curves for each of the cross validation iterations and the mean
+are shown in \autoref{fig:classifier-roc}.
+\autoref{fig:roc-vs-energy} shows the area under the \gls{roc}-curve in intervals
+of estimated gamma energy as predicted by the energy prediction model.
+It can be seen that the larger the estimated energy, the better
+the model can distinguish between gammas and protons in the same energy interval.
+
+\begin{figure}
+  \begin{captionbeside}{%
+    \gls{roc} curves of the classification model.
+    Because the number of training samples is very large, variance between
+    cross validation iterations is low and the single curves are only barely visible.
+    \label{fig:classifier-roc}%
+  }
+  \raisebox{\dimexpr\baselineskip-\totalheight\relax}{%
+    \includegraphics[page=1, trim={0 0 5.25cm 0}]{build/plots/separator_performance_apa85.pdf}
+  }
+  \end{captionbeside}
+\end{figure}
+
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/roc_vs_energy_apa85.pdf}
+  \caption{%
+    Area under the \gls{roc}-curve evaluated in bins of estimated gamma energy $E_\text{est}$.
+    The higher the estimated energy, the better the classifier performance.
+    For a discussion, why bins of estimated energy are used see \autoref{sec:sensitivity}.
+  }\label{fig:roc-vs-energy}
+\end{figure}
+
+In the next section, the effective collection area for gammas and protons is shown 
+in \autoref{fig:effective-area-bg}, demonstrating that applying the 
+selection criteria dramatically decreases collection area for protons while keeping
+most of the gamma rays.
+
+
+\section{Instrument Response Functions}\label{sec:irf}
+
+\Glspl{irf} are key properties of the combined system
+of detector and analysis software that describe the response to particles given
+their physical attributes.
+The \glspl{irf} are needed to do any physics analysis from lists
+of events with reconstructed properties like estimated energy, particle type and origin
+with additional metadata such  as measurement time and observed source.
+Four different \gls{irf} components together fully describe the measurement process of any \gls{iact}:
+\begin{itemize}
+  \item Effective area, \autoref{sec:effective-area}, describes the detection
+    efficiency of a telescope as the area a perfect detector directly measuring 
+    gamma rays with the same efficiency as the real telescope would have.  
+  \item Energy dispersion, \autoref{sec:energy-dispersion}, describes
+    the performance of the energy reconstruction as the probability density 
+    to get an estimated energy $\Eest$ for a given true energy $\Etrue$.
+  \item \Gls{psf} of the gamma ray origin reconstruction, \autoref{sec:psf},
+    not to be confused with the optical point spread function of the reflector system,
+    describes how well the position of a gamma ray can be reconstructed.
+  \item Background rate describes the number of background events still present after
+    applying the event selection after the gamma-hadron-separation.
+\end{itemize}
+
+For a long time, exact definition and treatment of these were slightly different 
+from experiment to experiment but with the advent of \gls{cta} and it being
+operated as an open observatory, a standardization effort has started
+ under the name \enquote{Data Formats for Gamma-Ray Astronomy}~\cite{ogadf}.
+In their most general form, called full-enclosure-\glspl{irf} by \cite{ogadf},
+all these depend on the energy, either true or estimated, and the offset of the reconstructed
+source position from the optical axis, 
+relying on the assumption that the \glspl{irf} are radially symmetric.
+
+In case of observing point sources in wobble mode, the \glspl{irf} are simpler,
+as only one offset from the optical axis needs to be given,
+the background can be estimated from the same observations and the effective area
+includes the selection of the on region. 
+The \gls{psf} only plays a role in the selection of the on region's size and
+is not needed afterwards.
+Only these point-like \glspl{irf} will be discussed here, as they are
+the most relevant for \gls{fact}'s monitoring of well-known, bright point sources.
+
+The calculation of these \glspl{irf} was implemented in a python package of the 
+same name, again by Kai Brügge and myself\footnote{\url{https://github.com/fact-project/irf}}.
+The uncertainties are estimated by applying the same calculations to 
+datasets created by sampling with replacement from the original dataset, bootstrapping.
+
+\subsection{Angular resolution}\label{sec:psf}
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/disp_metrics_apa85.pdf}
+  \caption{%
+    Accuracy of the prediction for $\sgn{\param{disp}}$ and $r^2$ score 
+    of the prediction for $\abs{\param{disp}}$ calculated in bins of true energy 
+    for the point source gammas observed in wobble mode before and after applying
+    the prediction threshold.
+  }\label{fig:disp-metrics}
+\end{figure}
+
+\noindent The angular resolution is a measure for how well an analysis can reconstruct
+the origin of a gamma ray.
+As the \param{disp} parameterization is now done using the \texttt{aict-tools},
+the used features and the parameters for the random forest are stored
+in the configuration file in Appendix~\ref{apx:aict-config}.
+\autoref{fig:disp-metrics} shows the performance metrics of the \param{disp} estimation
+in several energy ranges for simulated gamma-ray events before and after applying the
+prediction threshold.
+Both accuracy and $r^2$ score improve with higher energies
+and gamma-ray events that earn a high $\param{gamma\_prediction}$ are also easier to
+reconstruct for the \param{disp} prediction.
+
+
+Compared to the older \facttools{} parameterization, the angular resolution
+has drastically improved, especially in the higher energies.
+While at the lower energies more events are lost due to misclassification of
+$\sgn\param{disp}$, the background rate was reduced by a factor of two as 
+the diffuse background is not skewed towards the assumed source position anymore.
+
+Angular resolution is defined here as the radius from the source position
+which contains \SI{68}{\percent} of the reconstructed events.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/compare_old_disp_only_correct.pdf}
+  \caption{%
+    Comparison of the angular resolution using the simple \param{disp} parameterization
+    from \facttools{} with the new, machine learning based parameterization implemented
+    in the \texttt{aict-tools}.
+    Large improvements  could be achieved over the full energy range,
+    but especially at the higher energies.
+    Only events with the correct prediction for $\sgn{\param{disp}}$ and
+    with $\param{gamma\_prediction} \geq \protect\input{build/theta2_cut_apa85.txt}\unskip$ were used. 
+    A version where all events were used is shown in Appendix~\ref{apx:old-disp-all},
+    showing that for small energies,
+    a lot of events are essentially lost because of the wrong sign prediction.
+    This can also be seen in \autoref{fig:disp-metrics} showing the accuracy of the sign prediction and in \autoref{fig:effective-area} when comparing
+    the effective area before and after applying the event selection based on $\theta$.
+  }\label{fig:ang-comp}
+\end{figure}
+
+
+\autoref{fig:ang-comp} shows the angular resolution of the dataset with $\param{APA}= \SI{85}{\percent}$ for the old disp parameterization \eqref{eq:disp} compared 
+to the new random forest based approach.
+The random forest based approach improves the angular resolution over the full
+energy range, but the improvement is particularly large for energies higher than
+\SI{5}{\TeV}.
+
+
+\subsection{Effective Area}\label{sec:effective-area}
+
+The differential (in energy) flux of a gamma-ray point source has the dimensionality particles per
+time, area and energy.
+As a telescope counts gamma rays, the observed area, the observation time and 
+the energy of the particles needs to be known to estimate flux.
+As a real telescope is also unable to detect all gamma rays that reach the telescope,
+it is necessary to know the detection efficiency or acceptance to correctly
+reconstruct the original number of gamma rays.
+In gamma ray astronomy, it is common to define an effective area $\Aeff$ that
+combines the area the detector is observing with the detection efficiency.
+It can be interpreted as the area a perfect detector directly observing the gamma
+rays would need to observe the same number of particles.
+Effective area can only be expressed as function of the true, simulated energy,
+as it relates the number of detected particles to the number of all particles and
+no estimated energy exists for the non-detected particles.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/effective_area_apa85.pdf}
+  \caption{%
+    Effective area in bins of simulated energy for gamma rays from a point source observed in wobble mode
+    after the event pre-selection, after applying the prediction threshold and
+    after applying both the prediction threshold and the selection using $θ^2_{\max}$.
+    The efficiency of the classifier results in an overall drop in effective area 
+    while the $θ²$ cut mainly reduces effective area for low energies. 
+  }\label{fig:effective-area}
+\end{figure}
+
+Effective area is then defined as
+\begin{align}
+  \Aeff(E) &=  p(E) A \\
+  \intertext{%
+    where $p(E)$ is the detection probability for a gamma ray with energy $E$ and $A$
+    is the area the telescope is able to observe.
+    $p(E)$ is estimated by counting detected events $N_\text{detected}$ and
+    divide by the total number of simulated events $N_\text{simulated}$ in intervals of $E$.
+    Thus the discretized effective area in the $i$-th energy interval is: 
+  }
+  \Aeff_{, i} &=  \frac{N_{\text{detected}, i}}{N_{\text{simulated}, i}} A_\text{simulated}
+\end{align}
+$A_\text{simulated} = \PI \Rmax[2]$ is the area the impact points of the gamma rays were simulated in.
+The simulation has to sample the whole area, the telescope is sensitive to,
+as otherwise the effective area will be underestimated.
+\autoref{fig:impact} shows the distribution of impact distance of the simulated gamma rays after
+applying the image cleaning.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/impact.pdf}
+  \caption{%
+    Distribution of the impact parameter, the distance from where the shower axis
+    intersects the observation level to the telescope. 
+    Because \gls{corsika} draws the impact scattering perpendicular to the shower axis
+    but measures the impact point on the ground level, the cutoff is not hard
+    at $R_{\max} = \SI{300}{\meter}$ but smeared out a little due to events with zenith
+    distances ${} > 0$. 
+    The number of detected events rises linearly first,
+    with the increasing area enclosed by the respective ring,
+    but drops of after roughly \SI{130}{\meter},
+    which is related closely to the radius in which the main part of the Cherenkov light reaches
+    the observation level, compare \autoref{fig:footprints}.
+  }\label{fig:impact}
+\end{figure}
+
+
+The effective area can be evaluated for different steps in the analysis, where
+each step is additionally discarding events:
+\begin{enumerate}
+  \item Events that triggered the telescope, see \autoref{sec:camera}.
+  \item Events with more than five pixels after image cleaning, see \autoref{sec:cleaning}.
+  \item Events surviving the event pre-selection, see \autoref{sec:precuts}.
+  \item Events after applying the gamma-hadron-separation threshold $p_\gamma > t_p$, see \autoref{sec:classification}.
+  \item Events in the On region after applying $\theta^2 < \theta^2_{\max}$, see \autoref{sec:detection}.
+\end{enumerate}
+
+Effective area for the last three steps is shown in \autoref{fig:effective-area} 
+for gamma rays from a point source observed in wobble mode. 
+\autoref{fig:effective-area-bg} shows the effective area for step 3 and 5 
+also for the background class.
+The shape is as expected in gamma-ray astronomy, first rising steeply with
+energy and than reaching a plateau with a slight drop off at the highest energies
+caused by the growing percentage of showers not fully contained in the camera.
+
+It is only possible to evaluate effective area with respect to the
+true gamma-ray energy as no estimated energy is known for events
+that did not trigger the telescope, survive the image cleaning or were discarded
+by the event pre-selection.
+
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/effective_area_apa85_bg.pdf}
+  \caption{%
+    Effective area in bins of simulated energy for gamma rays from a point source observed in wobble mode and protons after the event pre-selection (transparent)
+    and after applying both the prediction threshold and the selection using $θ^2_{\max}$ (solid).
+    The first energy bin did not contain any proton events after applying the
+    event selection criteria and is thus not shown in the logarithmic scale.
+    While overall roughly \SI{25}{\percent} of the gamma rays are kept, 
+    the proton background is reduced by at least three orders of magnitude.
+  }\label{fig:effective-area-bg}
+\end{figure}
+
+
+\subsection{Energy Dispersion}\label{sec:energy-dispersion}
+
+Energy dispersion or migration is the probability density function 
+of measuring an estimated energy $\Eest$ given a true energy $\Etrue$.
+Knowledge of the energy dispersion is necessary as the energy estimation 
+is not perfect and in general has non-zero bias and resolution.
+The energy dispersion is thus needed for the statistical reconstruction of spectra
+from lists of reconstructed events. 
+Methods for this will be discussed in \autoref{chp:spectrum}.
+As the energy dispersion closely relates to the other performance metrics of the energy estimation,
+these will also be discussed here.
+
+The logarithm of the energy is estimated using a random forest regressor with the configuration
+in Appendix~\ref{apx:aict-config}.
+It is trained on \num{500000} diffuse gamma rays and comprises \num{200} single
+decision trees.
+The depth of the trees is limited and a minimum leaf size is set to prevent overtraining
+and overly large models, also achieving faster application times.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/energy_migration_apa85.pdf}
+  \caption{%
+    Energy migration matrix for gamma rays from a point source observed in
+    wobble mode after applying the event selection.
+  }\label{fig:energy-migration}
+\end{figure}
+
+On the cross validated training dataset, the regressor achieved an $r^2$-score of
+\input{build/r2_apa85.tex}\unskip.
+The migration matrix is shown in \autoref{fig:energy-migration}.
+As the $r^2$-score is a single number over the full energy range used for training and
+dependent on the simulated spectrum in case the performance is not uniform over the 
+energy range, two metrics are calculated
+in bins of true energy, both aggregating the relative error 
+\begin{equation}
+  \increment E_{\text{rel}} = \frac{\Eest - \Etrue}{\Etrue}.
+\end{equation}
+\emph{Bias} is here defined as the median of the relative error and \emph{resolution}
+as half the interquantile distance between the upper and lower quantile containing
+\SI{68.2}{\percent}, as the \SI{1}{\sigma} interval of the normal distribution, of the events:
+\begin{equation}
+  \operatorname{Resolution} = \frac{Q_{84.1}(\increment E_{\text{rel}}) - Q_{15.9}(\increment E_{\text{rel}})}{2}
+\end{equation}
+
+Several other definitions\footnote{See \url{https://xkcd.com/927}} exist and are used in publications,
+\cite{magic-performance} is fitting a normal distribution to the histogram of the relative error.
+This however underestimates the resolution in case of skewed distributions,
+which occur regularly.
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/bias_resolution_apa85.pdf}
+  \caption{%
+    Bias and resolution for gamma rays from a point source observed in wobble mode
+    after applying the event selection.
+  }\label{fig:bias-resolution}
+\end{figure}
+\gls{cta} uses the interval centered around {\lining 0} containing \SI{68.2}{\percent}
+of the events, which intertwines centrality and width of the relative error
+and can be interpreted as a quantile based version of the root mean squared.
+Just taking the mean and standard deviation is prone to be influenced heavily by
+few very large outliers, so the median and interquantile distance is taken as a 
+more robust method of estimating bias and resolution.
+As with the angular resolution, the performance of the energy estimation improves
+quite dramatically after discarding gamma rays with low values for $p_\gamma$ and
+only taking events in the On region into account.
+Bias and resolution for the events selected into the final dataset are shown in 
+\autoref{fig:bias-resolution}, Appendix~\ref{apx:bias-resolution-all} shows bias and
+resolution without applying the event selection.
+
+\section{Differential Flux Sensitivity}\label{sec:sensitivity}
+The central measure of the performance of an \gls{iact} is its
+differential flux sensitivity, which is defined as the smallest flux the
+telescope can still detect with a certain statistical significance in a given
+observation time.
+Most commonly, \gls{iact} sensitivities are given for \SI{5}{\sigma} according
+to \eqref{eq:lima} in \SI{50}{\hour} of observation time.
+As calculating the sensitivity requires counting events, the differential sensitivity 
+is given as integral sensitivity in bins of energy.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/size_vs_true_energy.pdf}
+  \caption{%
+    \param{size} vs.\ primary energy for simulated proton and gamma ray induced showers.
+    The contours contain the listed percentage of all events.
+    It can be seen, that protons need to have an approximately five times higher energy
+    to produce the same amount of Cherenkov light in the camera of an \gls{iact}.
+  }\label{fig:size-energy-comp}
+\end{figure}
+
+A controversial topic is whether the sensitivity should be calculated in bins
+of $\Etrue$ or bins of $\Eest$.
+\autoref{fig:size-energy-comp} shows the amount of Cherenkov light the \gls{fact} 
+camera received, image parameter \param{size}, against the energy of the primary particle
+for gamma rays and protons.
+It is clear, that protons of the same primary energy as gamma rays do not produce
+similar images.
+The same can be seen in Appendix~\ref{apx:est-vs-true} which shows the same for the
+estimated gamma energy vs true energy.
+Consequently, calculating sensitivity in bins of true energy for both 
+gammas and protons uses a very unrealistic background model and is also not
+possible to calculate on observed data.
+On the other hand, calculating sensitivity in bins of estimated energy is
+possible on both simulated and observed data and provides a more realistic background
+modeling in each bin.
+The disadvantage is  that the behaviour of the energy migration plays a role in 
+the discretization and that energy migration has to be taken into account to answer
+the question  if a source with a certain flux would be detectable.
+A solution to both problems could be either to unfold the event counts using the energy migration,
+assuming unfolding the hadronic background yields a background estimation in bins
+of true energy or to only discretize the gamma rays in bins of true energy and
+find a better model for the background in these bins.
+
+For now, we look into the simulated and observed sensitivity in bins
+of estimated energies.
+In each bin, the number of events in the on region $\Non$ and the number
+of events in the off regions $\Noff$ is calculated.
+The number of signal events expected from a source with flux of a fraction $p$ of the
+Crab Nebula flux is estimated to be
+\begin{equation}
+  N_{\text{signal}} = \frac{t_{\text{ref}}}{{t_\text{obs}}} (p \cdot (\Non - α \Noff)),
+\end{equation}
+where $t_\text{ref}$ is the reference observation time for the sensitivity,
+$t_\text{obs}$ is the observation time of the dataset and $α = 0.2$ is the
+size ratio of the on region to the Off regions.
+The background expectancy only needs to be scaled to the correct reference time:
+\begin{equation}
+  N_{\text{background}} = \frac{t_{\text{ref}}}{{t_\text{obs}}} \Noff
+\end{equation}
+The scaled event counts in the off and on region are then
+\begin{align}
+  N'_{\text{on}} &= \frac{t_{\text{ref}}}{{t_\text{obs}}} (p \cdot (\Non - α \Noff) + α \Noff) \\
+  N'_{\text{off}} &= \frac{t_{\text{ref}}}{{t_\text{obs}}} \Noff
+\end{align}
+The flux sensitivity is then the value of $p$ that solves
+\begin{equation}
+  S_{\text{Li \& Ma}} (N'_{\text{on}}, N'_{\text{off}}, α) \stackrel{!}{=} 5. \label{eq:sensitivity}
+\end{equation}
+Unfortunately, finding $p$ analytically is impossible and is thus done numerically
+using the Newton--Raphson method, the results are shown in \autoref{fig:sensitivity}.
+
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/sensitivity_apa85.pdf}
+  \caption{%
+    Differential sensitivity in bins of estimated energy $E_\text{est}$ for
+    simulated and observed data. 
+    For the simulations, the gamma-ray events were weighted to the 
+    flux of the Crab Nebula as measured and parameterized using a log-parabola 
+    by the \gls{magic} telescopes in \cite{magic-crab}. 
+    The simulated protons were weighted to the all particle cosmic rays spectrum
+    \eqref{eq:all-particle}.
+    While the simulated spectral sensitivities agree within statistical uncertainties
+    for energies larger than \SI{2}{\TeV},
+    a disagreement is visible for the lower energies.
+    The lowest energy bin is missing for the simulated dataset,
+    as too few events remained here for estimating the sensitivity.
+  }\label{fig:sensitivity}
+\end{figure}
+
+For the simulated datasets, the gamma rays are again weighted to \eqref{eq:magic-crab}.
+Due to the limited helium core statistics, see \autoref{tab:events}, the background
+is only modeled by protons weighted to \eqref{eq:all-particle}.
+The sensitivity is calculated in five bins equidistant in log-space per decade in estimated energy
+for \SI{50}{\hour} of observation time.
+
+The integral sensitivity over the whole energy range is \input{build/integral_sensitivity_apa85.tex}\unskip{} of the Crab Nebula flux for the observed data over the whole energy range,
+which is a considerable improvement over the \SI{15.2}{\percent}\footnote{Calculated
+using \eqref{eq:sensitivity} from the \Non{} and \Noff{} given in Table 6.7, p.~72} in \cite{phd-temme}
+and \SI{13.7}{\percent} from \cite{icrc-performance}.

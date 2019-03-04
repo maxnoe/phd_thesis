@@ -1,0 +1,220 @@
+n_bins: 100
+
+datasets:
+  - label: Crab Nebula Observations
+    path: ../build/apa85/crab_precuts.hdf5
+    kind: observations
+    color: black
+
+  - label: APA 85 \%
+    show_parts: False
+    parts:
+      - label: Helium Cores
+        path: ../build/apa85/helium_precuts.hdf5
+        kind: protons
+        color: '#ff7f0ecc'
+        n_showers: 108000000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 5922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.65
+            e_ref:
+                value: 1
+                unit: GeV
+
+      - label: Protons
+        path: ../build/apa85/proton_precuts.hdf5
+        kind: protons
+        color: '#ff7f0e66'
+        n_showers: 4319600000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 10922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.705
+            e_ref:
+                value: 1
+                unit: GeV
+
+
+  - label: APA 95 \%
+    show_parts: False
+    parts:
+      - label: Helium Cores
+        path: ../build/apa95/helium_precuts.hdf5
+        kind: protons
+        n_showers: 108000000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 5922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.65
+            e_ref:
+                value: 1
+                unit: GeV
+
+      - label: Protons
+        path: ../build/apa95/proton_precuts.hdf5
+        kind: protons
+        n_showers: 4319600000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 10922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.705
+            e_ref:
+                value: 1
+                unit: GeV
+
+  - label: APA 100 \%
+    show_parts: False
+    parts:
+      - label: Helium Cores
+        path: ../build/apa100/helium_precuts.hdf5
+        kind: protons
+        n_showers: 108000000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 5922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.65
+            e_ref:
+                value: 1
+                unit: GeV
+
+      - label: Protons
+        path: ../build/apa100/proton_precuts.hdf5
+        kind: protons
+        n_showers: 4319600000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 10922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.705
+            e_ref:
+                value: 1
+                unit: GeV
+  - label: APA 95 \%
+    show_parts: False
+    parts:
+      - label: Helium Cores
+        path: ../build/apa85/helium_precuts.hdf5
+        kind: protons
+        n_showers: 108000000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 5922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.65
+            e_ref:
+                value: 1
+                unit: GeV
+
+      - label: Protons
+        path: ../build/apa85/proton_precuts.hdf5
+        kind: protons
+        n_showers: 4319600000
+        spectral_index: -2.0
+        max_impact: 500
+        viewcone: 6
+        e_min: 100
+        e_max: 200.0e+3
+        sample_fraction: 1
+        spectrum:
+            function: power_law
+            phi_0:
+                value: 10922
+                unit: GeV^-1 m^-2 s^-1 sr^-1
+            spectral_index: -2.705
+            e_ref:
+                value: 1
+                unit: GeV
+
+include_columns:
+    - size
+    - width
+    - length
+    - concentration_core
+    - concentration_cog
+    - num_pixel_in_shower
+    - leakage1
+
+columns:
+    size:
+        transform: np.log10
+        yscale: log
+        xlabel: '$\log_{10}(\param{size})$'
+        legend_loc: 'lower left'
+
+    num_pixel_in_shower:
+        limits: [-0.5, 299.5]
+        n_bins: 75
+        yscale: log
+        xlabel: '\param{num\_pixel\_in\_shower}'
+
+    width:
+        xlabel: '\param{width}'
+        limits: [0, 30]
+
+    length:
+        xlabel: '\param{length}'
+
+    leakage1:
+        xlabel: '\param{leakage1}'
+        yscale: log
+
+    concentration_core:
+        xlabel: '\param{concentration\_core}'
+
+    concentration_cog:
+        xlabel: '\param{concentration\_cog}'

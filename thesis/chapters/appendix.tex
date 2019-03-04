@@ -1,0 +1,418 @@
+\appendix
+\addtocontents{toc}{\protect\setcounter{tocdepth}{0}}
+
+\chapter{Appendix}
+\raggedbottom
+\captionsetup{hypcap=false}
+
+\section{On Reproducing this Work}\label{apx:reproducing}
+
+This doucment is build completely without human intervention from only a few input 
+data files, scripts to create visualizations and the \LaTeX{} source code.
+The input data files comprise the image parameters for the different datasets
+as described in the thesis and some additional files, e.\,g.\ the \gls{corsika}
+output for the Cherenkov footprint visualizations.
+
+To build this thesis, including training all the machine learning models,
+applying them to the data, calculate and visualize the performance metrics,
+unfold the spectrum of the Crab Nebula and compile the \LaTeX{} document, 
+only a single call to the \texttt{make} program is necessary.
+
+\subsection{Source Code of the Thesis}
+
+The source code of this thesis is publicly available at \url{https://github.com/maxnoe/phd_thesis}.
+Download an archive from the website or use git:
+\begin{lstlisting}
+$ git clone https://github.com/maxnoe/phd_thesis 
+\end{lstlisting}
+
+\subsection{Access to the Data}
+
+The input data files needed to build this thesis are at the time 
+of writing archived on the storage server \texttt{big-tank.app.tu-dortmund.de}
+in the directory
+\begin{center}
+\texttt{/POOL/users/mnoethe/phd\_thesis/data}.
+\end{center}
+This directory is required to be copied or linked into the \texttt{data} directory
+in the base directory of this thesis.
+
+
+\subsection{Used Software}
+
+\texttt{GNU Make}~\cite{make} is used to define the steps needed
+to produce this thesis. 
+The analysis itself builds on the
+scientific Python stack~\cite{numpy,scipy,pandas,matplotlib,scikit-learn},
+astropy~\cite{astropy} and a number of packages developed and contributed
+to by me during the work on this thesis.
+
+Building the thesis needs TeXLive 2019, from \url{https://www.tug.org/texlive},
+for installation instructions see \url{https://toolbox.pep-dortmund.org/install/linux}.
+
+Python in version 3.7 via the conda package manager is used.
+On Linux, to download and install miniconda and setup the environment needed
+for this thesis, use:
+
+\begin{lstlisting}
+$ curl -LO https://repo.anaconda.com/miniconda/Miniconda3-4.7.12-Linux-x86_64.sh
+$ bash Miniconda3-4.7.12-Linux-x86_64.sh -b -p path/to/install/miniconda
+$ source path/to/install/miniconda/etc/profile.d/conda.sh
+$ conda env create -n phd_mnoethe -f full_environment.yaml
+\end{lstlisting}
+The \texttt{full\_environment.yaml} file lists all packages in the exact
+version as was used to produce this thesis.
+The file \texttt{environment.yaml} lists the minimal, direct dependencies 
+with more lax version requirements, these are:
+\lstinputlisting{../environment.yaml}
+
+\subsection{Building this thesis}
+
+After installing all required software and acquiring the input data,
+the only thing needed to build this document and all its figures and tables
+is to call
+\begin{lstlisting}
+$ conda activate phd_mnoethe
+$ make
+\end{lstlisting}
+in the base directory of the git repository.
+It will take a few hours, to train all the machine learning models,
+apply them, create figures and tables and to typeset the final document.
+
+\subsection{Docker Container}
+
+A docker image with all installed software to directly build this thesis
+is defined in the \texttt{Dockerfile} in the git repository and is stored
+on the \texttt{big-tank} server. 
+
+\section{Cherenkov Footprint of 10 TeV Iron Shower by Emitting Particle}
+\begin{center}
+  \includegraphics{build/plots/iron_footprint_rgb.pdf}
+  \captionof{figure}{%
+    Cherenkov light at the observation level for a \SI{10}{\TeV} iron nucleus.
+    The color channels are for the different emitting particles:
+    red is light caused by electrons and positrons, green for muons and blue
+    for all others, mainly protons and pions.
+  }\label{apx:iron-rgb}
+\end{center}
+
+\section{Covariance Matrices of the Cosmic Ray Flux Fits}\label{apx:fit-results}
+
+For the proton flux:
+\begin{equation}
+  \operatorname{Cov}(γ, \log_{10}(Φ_0)) = \input{build/proton_cov.tex}
+\end{equation}
+For the helium flux:
+\begin{equation}
+  \operatorname{Cov}(γ, \log_{10}(Φ_0)) = \input{build/helium_cov.tex}
+\end{equation}
+
+\section{Probability Density Functions for Primary Properties in CORSIKA}\label{apx:corsika-pdfs}
+The energy is sampled from a power law distribution with the following \gls{pdf}:
+\begin{equation}
+  P_E(E) = \begin{cases}
+    \frac{(γ + 1) \Eref[γ]}{\Emax[γ + 1] - \Emin[γ + 1]} \left(\frac{E}{\Eref}\right)^γ &
+    \Emin ≤ E ≤ \Emax \\
+    0 &
+    \text{otherwise}
+  \end{cases}
+\end{equation}
+With $\Eref = \SI{1}{\GeV}$ for \gls{corsika}.
+The impact distance is sampled such that it is uniform in area, resulting in the following \gls{pdf}:
+\begin{equation}
+  P_R(R) =  \begin{cases}
+    \frac{2R}{R_{\max}^2} & 0 ≤ R ≤ R_{\max} \\
+    0 & \text{otherwise}
+  \end{cases}
+\end{equation}
+The azimuth angle is sampled uniformly:
+\begin{equation}
+  P_φ(φ) = \begin{cases}
+    \frac{1}{φ_{\max} - φ_{\min}} & φ_{\min} ≤ φ ≤ φ_{\max} \\
+    0 & \text{otherwise}
+  \end{cases}
+\end{equation}
+The zenith distance is sampled such that events are uniform in solid angle in the
+given limits:
+\begin{equation}
+  P_ϑ(ϑ) = \begin{cases}
+    \frac{\sinϑ}{\cosϑ_{\min} - \cosϑ_{\max}} & ϑ_{\min} ≤ ϑ ≤ ϑ_{\max} \\
+    0 & \text{otherwise}
+  \end{cases}
+\end{equation}
+This results in a sawtooth-like distribution, when several zenith intervals
+are simulated.
+
+
+\section{Database Tables of Mopro3}\label{apx:mopro-tables}
+
+\subsection{CorsikaSettings}
+
+\begin{description}[font=\ttfamily, itemsep=0.2ex, parsep=0ex]
+  \item[id, Integer, PrimaryKey]
+  \item[name, Text] Human readable description, used for directory structure and output files.
+  \item[version, Integer] \gls{corsika} version identifier. The current release is 77000,
+    used for production was 76900.
+  \item[config\_h, Text] The \gls{corsika} compilation time configuration as precompiler header,
+    this is generated by running the \gls{corsika} configuration utility (\texttt{coconut}).
+    The compile time configuration of \gls{corsika} determines among other options the used
+    interaction models. 
+    The main purpose of storing the whole header file and not single options is to
+    minimize the complexity and maintainability of \texttt{mopro3} by not implementing each possible option
+    but rely on the header file generation through the \texttt{coconut} tool.
+  \item[inputcard\_template, Text] The template for the input card  as discussed in \autoref{sec:mopro}
+  \item[addtional\_files, Binary] On its first run, \gls{corsika} calculates a number
+    of interpolation tables, which is quite time intensive and can take up to several hours.
+    This is infeasible for a large, parallel production on a cluster.
+    Thus, these interpolation tables are calculated once up front and stored as a tarball
+    in the database, which is unpacked into the \gls{corsika} run directory for each
+    job.
+\end{description}
+
+
+\subsection{CorsikaRun}
+\begin{description}[font=\ttfamily, itemsep=0.2ex, parsep=0ex]
+  \item[id, Integer, PrimaryKey] inserted as the run number into the input card template
+  \item[corsika\_settings\_id, ForeignKey] reference to the \texttt{CorsikaSettings} to be used for this run.
+  \item[primary\_particle, Integer] \gls{corsika} identification number of the primary particle,
+    e.\,g.\ 1 for gamma ray, 14 for proton.
+  \item[n\_showers, Integer] how many showers to generate in this run
+  \item[zenith\_min, Float]
+  \item[zenith\_max, Float] minimum and maximum zenith range
+  \item[azimuth\_min, Float]
+  \item[azimuth\_max, Float] minimum and maximum azimuth range
+  \item[energy\_min, Float]
+  \item[energy\_max, Float] minimum and maximum energy range
+  \item[reuse, Integer] how many times the shower should be reused, see \autoref{sec:corsika-cherenkov}
+  \item[max\_radius, Float] maximum scatter radius of the primary particle
+  \item[bunch\_size] Bunch size option as discussed in \autoref{sec:corsika-cherenkov}
+\end{description}
+
+The \texttt{ceres} configuration is stored in the table \texttt{CeresSetttings}
+and contains these columns:
+\begin{description}[font=\ttfamily, itemsep=0.2ex, parsep=0ex]
+  \item[id, Integer, PrimaryKey]
+  \item[name, Text] human readable name, used for the directory structure and output files
+  \item[revision, Integer] version number in \gls{fact}'s version control repository
+  \item[rc\_template, Text] template for the \ceres{} rc file
+  \item[resource\_files, Binary] A tarball with further configuration files.
+    This includes for example tables of the reflectivity versus wavelength of the mirrors
+    and the photon detection efficiency of the \glspl{sipm}.
+  \item[psf\_sigma, Float] \gls{psf} of the individual mirror facets
+  \item[apd\_dead\_time, Float]
+  \item[apd\_recovery\_time, Float]
+  \item[apd\_cross\_talk, Float]
+  \item[apd\_afterpulse\_probability\_1, Float]
+  \item[apd\_afterpulse\_probability\_2, Float] Physical properties
+    of the \gls{sipm} cells, see \autoref{chp:fact}.
+  \item[excess\_noise, Float] Standard deviation of white noise added to the electronics signal.
+  \item[nsb\_rate, Float] Rate of \gls{nsb} photons
+  \item[additional\_photon\_acceptance, Float] Photons are only processed with this probability,
+    effectively discarding a fixed percentage of photons. 
+    Introduced for \cite{phd-temme}, this was motivated by the missing obstruction
+    by the telescope structure and degrading mirrors.
+  \item[dark\_count\_rate, Float] of the \gls{sipm}
+  \item[pulse\_shape\_function, Text] a function describing the shape of the single photon
+    pulse
+  \item[residual\_time\_spread, Float] Standard deviation of a fixed time offset between pixels
+  \item[gapd\_time\_jitter, Float] Standard deviation for a normal random number added 
+    to the arrival time of each individual Cherenkov photon
+  \item[discriminator\_threshold] Trigger threshold, see \autoref{sec:camera}
+\end{description}
+
+\subsection{CeresRun}
+\begin{description}[font=\ttfamily, itemsep=0.2ex, parsep=0ex]
+  \item[id, Integer, PrimaryKey]
+  \item[corsika\_run\_id, ForeignKey] id of the \texttt{CorsikaRun} used as input
+  \item[ceres\_settings\_id, ForeignKey] id of the \texttt{CeresSettings} to be used for this run
+  \item[diffuse, Boolean] if this run should simulate point-like or diffuse source of the primary.
+    For the diffuse case, pointing direction of the telescope is drawn randomly around the direction of the primary particle.
+  \item[off\_target\_distance, Float] wobble distance for point source mode or maximum angle
+    to the optical axis for diffuse mode.
+\end{description}
+
+\subsection{Processing related fields for CorsikaRun and CeresRun}
+Additionally, both \texttt{CorsikaRun} and \texttt{CeresRun} have these columns for
+tracking job state
+\begin{description}[font=\ttfamily, itemsep=0.2ex, parsep=0ex]
+  \item[location, Text] Processing location, for the case of multiple consumers from
+    the same database. Only \texttt{CeresRun}s are started where the corresponding 
+    \texttt{CorsikaRun} was processed at the same location, so that the input file is available.
+  \item[walltime, Integer] walltime is the maximum time a job is allowed to take and
+    is required by most cluster job management tools like \texttt{SLURM} so that jobs can be scheduled.
+  \item[status\_id, ForeignKey] id of the current job status 
+  \item[priority, Integer] jobs are processed in order of \texttt{priority}, \texttt{id}.
+    Lower values mean more important.
+  \item[duration, Integer] The runtime of the job in seconds, filled after a run finished sucessfully
+\end{description}
+
+Also the path of the outputfiles, one for \texttt{CorsikaRun}, two for each \texttt{CeresRun}
+are stored.
+
+\section{CORSIKA Input Card Template}\label{apx:corsika_input}
+\lstinputlisting{listings/corsika_template.tex}
+
+\section{CERES rc template}\label{apx:ceres-template}
+\lstinputlisting[basicstyle=\footnotesize\ttfamily]{listings/ceres_template.tex}
+
+
+\section{Pedestal Variance}\label{apx:pedvar}
+\begin{center}
+  \includegraphics{build/plots/star_pedvar.pdf}
+  \captionof{figure}{%
+    Mean pedestal variance over 1000 events of a run observing Aldebaran,
+    a variable star with an apparent magnitude of around \SI{0.8}{mag}.
+    To calculate pedestal variance, the time series in each pixel are divided
+    into windows of 30 values each.
+    The values are summed in each window and the variance over all windows is then
+    proportional to the amount of noise photons the pixel received.
+    The gray circles show the positions of stars brighter than \SI{6}{mag} as
+    queried through the star service.
+    This also demonstrates nicely, that the conversion from celestial coordinates
+    into camera coordinates works correctly, see \autoref{sec:coordinate-transforms}.
+  }\label{fig:pedvar}
+\end{center}
+
+
+
+\section{FACT-Tools Standard Analysis XML}\label{apx:std_analysis}
+
+\lstinputlisting[language=xml]{listings/facttools.xml}
+
+
+\section{SQL Query for the Crab Dataset}\label{apx:crab-runs}
+\lstinputlisting[language=sql]{listings/dataset.sql}
+
+\section{Configuration for the \texttt{aict-tools}}\label{apx:aict-config}
+
+\lstinputlisting{../configs/aict.yaml}
+
+\newpage
+\section{\param{size} for Excess Events and Gamma Simulations}\label{apx:gamma-size}
+\begin{center}
+  \includegraphics[scale=0.9]{build/plots/data_gamma_comp_apa95.pdf}
+  \captionof{figure}{%
+    Image parameter \param{size} for simulated gammas and the observed excess events
+    in the on region for loose event selection criteria.
+    The simulated dataset with $\param{APA} = \SI{95}{\percent}$ is shown here.
+  }\label{fig:data-gamma-size-95}
+\end{center}
+\begin{center}
+  \includegraphics[scale=0.9]{build/plots/data_gamma_comp_apa100.pdf}
+  \captionof{figure}{%
+    Image parameter \param{size} for simulated gammas and the observed excess events
+    in the on region for loose event selection criteria.
+    The simulated dataset with $\param{APA} = \SI{100}{\percent}$ is shown here.
+  }\label{fig:data-gamma-size-100}
+\end{center}
+
+\section{Angular Resolution for all Events}\label{apx:old-disp-all}
+\begin{center}
+  \includegraphics[scale=0.85]{build/plots/compare_old_disp.pdf}
+  \captionof{figure}{%
+    Comparison of the angular resolution with the simple \param{disp} parameterization
+    from \facttools{} with the new, machine learning based parameterization implemented
+    in the \texttt{aict-tools} for the simulated point source gammas of the dataset
+    with $\param{APA} = \SI{95}{\percent}$.
+  }\label{fig:ang-comp-all}
+\end{center}
+
+\section{Bias and Resolution without Applying the Event Selection}\label{apx:bias-resolution-all}
+\begin{center}
+  \includegraphics[scale=0.85]{build/plots/bias_resolution_all_apa85.pdf}
+  \captionof{figure}{%
+    Bias and resolution for all gamma events simulated in wobble mode after
+    applying only the event pre-selection.
+  }\label{fig:bias-resolution-all}
+\end{center}
+
+
+\newpage
+\section{Performance visualisations}\label{apx:apa-not-85}
+All visualizations presented in \autoref{chp:performance} for
+the datasets that were not shown there.
+
+\begin{center}
+  \includegraphics[scale=0.95]{build/plots/significances_apa95.pdf}
+  \captionof{figure}{%
+    Significances for \param{APA} = \SI{95}{\percent}, see \autoref{fig:significances}. 
+  }\label{fig:significances-95}
+\end{center}
+\begin{center}
+  \includegraphics[scale=0.95]{build/plots/significances_apa100.pdf}
+  \captionof{figure}{%
+    Significances for \param{APA} = \SI{100}{\percent}, see \autoref{fig:significances}. 
+  }\label{fig:significances-100}
+\end{center}
+
+
+\begin{center}
+  \includegraphics{build/plots/theta2_apa95.pdf}
+  \captionof{figure}{%
+    Theta-Squared-Plot for \param{APA} = \SI{95}{\percent}, see \autoref{fig:theta2}. 
+  }\label{fig:theta2-95}
+\end{center}
+\begin{center}
+  \centering
+  \includegraphics{build/plots/theta2_apa100.pdf}
+  \captionof{figure}{%
+    Theta-Squared-Plot for \param{APA} = \SI{100}{\percent}, see \autoref{fig:theta2}. 
+  }\label{fig:theta2-100}
+\end{center}
+
+
+\begin{center}
+  \includegraphics{build/plots/effective_area_apa95.pdf}
+  \captionof{figure}{%
+    Effective area for \param{APA} = \SI{95}{\percent}, see \autoref{fig:effective-area}. 
+  }\label{fig:aeff-95}
+\end{center}
+\begin{center}
+  \includegraphics{build/plots/effective_area_apa100.pdf}
+  \captionof{figure}{%
+    Effective area for \param{APA} = \SI{100}{\percent}, see \autoref{fig:effective-area}. 
+  }\label{fig:aeff-100}
+\end{center}
+
+
+\begin{center}
+  \includegraphics{build/plots/bias_resolution_apa95.pdf}
+  \captionof{figure}{%
+    Bias and resolution for \param{APA} = \SI{95}{\percent}, see \autoref{fig:bias-resolution}. 
+  }\label{fig:br-95}
+\end{center}
+\begin{center}
+  \includegraphics{build/plots/bias_resolution_apa100.pdf}
+  \captionof{figure}{%
+    Bias and resolution for \param{APA} = \SI{100}{\percent}, see \autoref{fig:bias-resolution}. 
+  }\label{fig:br-100}
+\end{center}
+
+
+\begin{center}
+  \includegraphics{build/plots/sensitivity_apa95.pdf}
+  \captionof{figure}{%
+    Differential sensitivity for \param{APA} = \SI{95}{\percent}, see \autoref{fig:sensitivity}. 
+  }\label{fig:sensitivity-95}
+\end{center}
+\begin{center}
+  \includegraphics{build/plots/sensitivity_apa100.pdf}
+  \captionof{figure}{%
+    Differential sensitivity for \param{APA} = \SI{100}{\percent}, see \autoref{fig:sensitivity}. 
+  }\label{fig:sensitivity-100}
+\end{center}
+
+
+\section{Estimated Energy vs. True Energy for Gammas and Protons}\label{apx:est-vs-true}
+\begin{figure}
+  \centering
+  \includegraphics{build/plots/gamma_energy_prediction_vs_true_energy.pdf}
+  \caption{%
+    \Eest{}  vs. \Etrue{} for simulated proton and gamma ray induced showers.
+    The contours contain the listed percentage of all events.
+  }
+\end{figure}
+
+
+\section{Configuration for the Unfolding}\label{apx:unfolding-config}
+\lstinputlisting{../configs/unfolding.yaml}

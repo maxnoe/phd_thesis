@@ -1,0 +1,84 @@
+n_bins: 50
+
+
+datasets:
+  - label: \texttt{CORSIKA 7.65}
+    path: ../build/apa85/proton_precuts.hdf5
+    kind: protons
+    n_showers: 4319600000
+    spectral_index: -2.0
+    max_impact: 500
+    viewcone: 6
+    e_min: 100
+    e_max: 200.0e+3
+    sample_fraction: 1.0
+
+
+  - label: \texttt{MMCS 6.5}
+    path: ../build/apa85-mmcs6500/proton_precuts.hdf5
+    kind: protons
+    n_showers: 780046520
+    spectral_index: -2.7
+    max_impact: 400
+    viewcone: 5
+    e_min: 100
+    e_max: 200.0e+3
+    sample_fraction: 1.0
+
+
+include_columns:
+    - size
+    - width
+    - length
+    - concentration_core
+    - concentration_cog
+    - corsika_event_header_total_energy
+    - ceres_event_basic_impact
+    - num_pixel_in_shower
+    - leakage1
+    - incident_angle
+    - cog_x
+    - cog_y
+
+columns:
+    ceres_event_basic_impact:
+        transform: "lambda x: x / 100"
+        xlabel: $R \mathbin{/} \si{\meter}$
+
+    size:
+        transform: np.log10
+        yscale: log
+        xlabel: '$\log_{10}(\param{size})$'
+        legend_loc: 'lower left'
+
+    num_pixel_in_shower:
+        limits: [-0.5, 299.5]
+        n_bins: 75
+        yscale: log
+        xlabel: '\param{num\_pixel\_in\_shower}'
+
+    width:
+        xlabel: '\param{width}'
+        limits: [0, 30]
+
+    length:
+        xlabel: '\param{length}'
+
+    leakage1:
+        xlabel: '\param{leakage1}'
+        yscale: log
+
+    concentration_core:
+        xlabel: '\param{concentration\_core}'
+        legend_loc: 'lower left'
+
+    concentration_cog:
+        xlabel: '\param{concentration\_cog}'
+        legend_loc: 'lower left'
+
+
+    corsika_event_header_total_energy:
+        transform: np.log10
+        yscale: log
+        xlabel: '$\log_{10}(E_{\text{true}} / \si{GeV})$'
+        legend_loc: 'lower center'

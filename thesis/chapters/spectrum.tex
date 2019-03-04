@@ -1,0 +1,159 @@
+\chapter{Energy Spectrum of the Crab Nebula}\label{chp:spectrum}
+
+In the \hyperref[chp:performance]{previous chapter},
+the different properties of the \gls{fact} detector combined with the analysis presented in \autoref{chp:preprocessing} and \autoref{chp:reconstruction} were introduced.
+The data is now reduced to lists of events with estimations of their physical properties
+and some metadata like observation time and pointing direction of the telescope,
+both for the observed and simulated datasets.
+From these, the spectral energy distribution of the Crab Nebula will now be estimated.
+
+This is the prototypical, indirect measurement process in high energy astrophysics. 
+The physical properties of interest are occluded from direct measurement and have
+to be reconstructed by the analysis techniques from indirect observations.
+Despite employing state-of-the-art techniques, these methods still suffer 
+from limited acceptance (not all events are detected),
+limited resolution (not all detected events are reconstructed perfectly)
+and an irreducible background.
+
+\section{Inverse Problems}
+Any measurement process can be described mathematically as folding the
+probability density function of the property of interest $f(x)$ with the 
+detector response $A(x, y)$ that transforms the true random variable $x$ into
+the observed quantity $y$ and adding a background $b(y)$ to get the probability
+density of the observed quantity $g(y)$~\cite[Chapter~11]{blobel}.
+\begin{equation}
+  g(y) = \int A(x, y) f(x) \d{x} + b(y) \label{eq:cave}
+\end{equation}
+This is a Fredholm integral equation of the second kind and the formulation 
+of the inverse problem of finding $f(x)$ from observations $g(y)$.
+An in-depth treatment about modern approaches to dealing with inverse problems 
+is available in \cite{benning-burger}.
+
+There are two possibilities of treating limited acceptance:
+first $A$ includes the limit acceptance so $\iint A(x, y) f(x) \d{x}\d{y} < 1$ or
+treating \eqref{eq:cave} only for the detectable events and applying the acceptance
+correction after an estimation for $f(x)$ has been found.
+In gamma-ray astronomy, usually the second path is chosen where solving \eqref{eq:cave}
+treats the limited energy resolution and the acceptance correction is performed
+using the effective collection area.
+
+To find a solution for \eqref{eq:cave}, the continuous version dealing with
+probability density functions is discretized in the observed and searched-for 
+quantity, transforming it into the matrix equation
+\begin{equation}
+  \v{g} = \m{A} \cdot \v{f} + \v{b} \label{eq:cave-disc}
+\end{equation}
+where $\v{g}$ and $\v{b}$ are $M$-vectors containing the event counts of each bin of the observed quantity,
+$\v{f}$ is an $N$-vector containing the expected counts in each bin of the searched-for
+quantity and $\m{A}$ is an $M \times N$ matrix modeling the detector response.
+The particle flux differential in energy, time and area is then
+\begin{equation}
+  Φ_i = \frac{\hat{f}_i}{\increment E_i \cdot A_{\text{eff},i} \cdot t_\text{obs}} \label{eq:flux}.
+\end{equation}
+Where $\hat{f}_i$ is the estimated solution of the inverse problem,
+$\increment E_i$  is the width of the energy interval $i$, 
+$A_{\text{eff},i}$ is the effective area in that interval and $t_\text{obs}$
+is the observation time.
+
+Unfortunately, the naive solution of subtracting $\v{b}$ and left-multiplying the
+inverse of $\m{A}$ often leads to unacceptable solutions with large bin-wise oscillations
+due to the bad condition of $\m{A}$ typical in inverse problems.~\cite[Chapter~11]{blobel}
+
+Two possible approaches can be made for the parameterization of $\v{f}$.
+For testing theoretical models or providing parameterizations only using few
+parameters, a continuous version of $f(x, \v{θ})$ depending on some parameter vector
+$\v{θ}$ is integrated in certain intervals to obtain discrete predictions for $\v{f}$.
+This approach is usually referred to as \emph{forward folding} and
+was used by the \gls{magic} collaboration to obtain the log-parabola parameterization \eqref{eq:magic-crab} used as reference spectrum for this work thus far~\cite{magic-crab}.
+Another approach with the advantage of being free of assumptions about the spectral shape
+is treating all entries of $\v{f}$ as free parameters, describing
+the true quantity as an unconstrained step function.
+This is called unfolding or deconvolution.
+
+\section{Poisson-Maximum-Likelihood Unfolding}
+Several different algorithms exist for one-dimensional unfolding
+and have been found to be equally capable of solving the inverse problems 
+in astrophysics~\cite{unfolding-bunse}.
+As $\v{g}$ is a histogram, containing integer counts of events,
+its entries are expected to follow Poisson distributions
+with the expected value of each bin given by the right hand side of \eqref{eq:cave-disc}.
+Under this assumption, it is possible to compute the likelihood function for observing a given vector $\v{g}$ as
+\begin{equation}
+  \symcal{L} = \prod_{i=0}^N \frac{λ_i^{g_i}}{g_i!} \symup{e}^{-λ_i} \label{eq:L}
+\end{equation}
+with 
+\begin{equation}
+  λ_i = (\m{A} \cdot \v{f} + \v{b})_i.
+\end{equation}
+For finding numerical solutions to \eqref{eq:L},
+it is usually more feasible to minimize or sample the negative logarithm of it.
+With constant terms under differentiation discarded this yields:
+\begin{equation}
+  -\log\symcal{L} = \sum_{i=0}^N - g_i \log{λ_i} + λ_i \label{eq:nLL}.
+\end{equation}
+It is often required in inverse problems to suppress oscillating, non-sensical
+solutions that arise from the ill-posedness of the inverse problem
+by introducing additional information from prior knowledge, e.\,g.\ by 
+adding a term to \eqref{eq:nLL} punishing large or non-flat solutions.
+One approach to this is called Tikhonov regularizaton and results in the following modified negative log-likelihood:
+\begin{equation}
+  -\log\symcal{L} = \sum_{i=0}^N - g_i \log{λ_i} + λ_i
+  - \frac{1}{2} (\v{C} \v{\hat{f}})^\top (τ\symbb{1})^{-1} (\v{C} \v{\hat{f}}).
+  \label{eq:nLL-reg}
+\end{equation}
+Here, $\v{C}$ is the Tikhonov regularizaton matrix.
+In astrophysics, where power-law or similar spectra are expected,
+it is usually chosen so that it calculates the discrete second order derivative,
+for $N = 4$:
+\begin{equation}
+  \v{C} = \begin{pmatrix*}[r]
+    -1 &  1 &  0 &  0 \\
+     1 & -2 &  1 &  0 \\
+     0 &  1 & -2 &  1 \\
+     0 &  0 &  1 & -1  \\
+  \end{pmatrix*}
+\end{equation}
+It is also important to note, that the assumption of flatness only holds for the
+logarithm of the acceptance corrected $\v{\hat{f}}$,
+not for the expected number of events,
+as these are limited by acceptance and will usually follow more of a bell curve.
+So for application in astrophysics,
+$\hat{f}_i$ is replaced with $\log(\hat{f}_i / A_{\text{eff}, i})$ in the regularizaton term.%
+~\cite[Chapter~4]{phd-boerner}
+
+In the last years, Bayesian approaches have peaked interest~\cite[Section~2]{benning-burger}.
+The posterior likelihood can be sampled using \gls{mcmc} providing a 
+fuller picture of the results than just an estimator obtained from numerically minimizing
+the negative log-likelihood and its covariance from the Fisher information.
+An efficient \gls{mcmc} sampling method, mainly characterized via short auto-correlation times,
+is described in \cite{emcee-algo} and implemented in the Python package \texttt{emcee}.
+This was used for unfolding of the atmospheric neutrino spectrum as observed by IceCube in 
+\cite{phd-boerner}, implemented in the \texttt{funfolding}~\cite{funfolding} library.
+
+\subsection{Application to FACT measurements}
+A program to unfold event lists as measured by \gls{fact} using \texttt{funfolding} has been developed as part of this thesis~\cite{fact-funfolding}.
+It reads reconstructed, simulated gamma-rays and information about
+all simulated events to calculate effective area $\Aeff$ and the energy migration matrix $A$.
+The discretization is done in intervals of estimated energy $\Eest$ that are equidistant in
+the logarithm of the energy.
+The background is estimated from the off positions and assumed to be exact.
+
+The results of applying the regularized unfolding to the Crab Nebula dataset 
+are shown in \autoref{fig:spectrum-comparison}, using each of the
+three different simulation sets for constructing the response matrix $\v{A}$ and
+the effective area $\Aeff$.
+The configuration used is shown in Appendix~\ref{apx:unfolding-config}.
+
+\begin{figure}
+  \centering
+  \input{build/plots/spectrum_comparison.pgf}
+  \caption{%
+    Comparison of the spectra unfolded using the different simulated datasets
+    for the \gls{irf} calculation.
+    Unfolding using the $\param{APA} = \SI{85}{\percent}$ dataset fits best
+    with the spectrum published by the \gls{magic} collaboration for energies
+    larger than \SI{1}{\TeV} while it shows significant disagreement at lower energies.
+    Agreement at low energies is better for the other two datasets but worse at 
+    higher energies.
+  }\label{fig:spectrum-comparison}
+\end{figure}

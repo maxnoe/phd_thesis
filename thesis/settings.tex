@@ -1,0 +1,51 @@
+% float package
+\floatplacement{figure}{htbp}
+\floatplacement{table}{htbp}
+
+\colorlet{darkRed}{red!80!black}
+\colorlet{darkBlue}{blue!70!black}
+
+\captionsetup{
+  labelfont=bf,
+  font=small,
+  width=0.9\textwidth,
+  format=plain,
+}
+
+\hypersetup{
+  pdfa,
+  unicode,
+  pdfencoding=unicode,
+  colorlinks=true,
+  linkcolor=red!40!black,
+  urlcolor=darkBlue,
+  citecolor=darkRed,
+}
+
+% \definecolor{tugreen}{cmyk}{57,0,100,0}
+\definecolor{tugreen}{RGB}{132,184,25}
+
+\renewcommand*{\glstextformat}[1]{\textcolor{black!70}{\lining #1}}
+
+\setcounter{tocdepth}{1}
+
+
+\renewcommand*{\chapterformat}{\fontsize{48}{48}\color{darkRed}\selectfont\thechapter\autodot\enskip}
+\renewcommand*{\sectionformat}{\makebox[0pt][r]{\thesection\autodot\enskip}}
+\renewcommand*{\subsectionformat}{\makebox[0pt][r]{\thesubsection\autodot\enskip}}
+
+
+% https://tex.stackexchange.com/questions/330243/chapter-heading-formatting-with-scrreprt
+\renewcommand\chapterlinesformat[3]{%
+  \Ifstr{#1}{chapter}
+  {%
+    \makebox[\textwidth][l]{%
+      \parbox[b]{\textwidth}{\raggedchapter #3}%
+      \hspace*{\marginparsep}#2%
+    }\\*[-.5\baselineskip]
+    \rule{\textwidth}{.4pt}%
+    \par%
+  }
+  {\@hangfrom{#2}{#3}}%
+}
+\interfootnotelinepenalty=10000

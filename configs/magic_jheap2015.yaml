@@ -1,0 +1,12 @@
+function: log_parabola
+phi_0: 
+  value: 3.23e-11
+  unit: TeV^-1 cm^-2 s^-1
+a: -2.47
+b: -0.24
+e_ref:
+    value: 1.0
+    unit: TeV
+label: MAGIC \cite{magic-crab}
+color: gray
+
